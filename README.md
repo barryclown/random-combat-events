@@ -18,7 +18,7 @@ The current alpha is designed and tested for single-player. Multiplayer is not s
 
 - [BaseLib](https://steamcommunity.com/sharedfiles/filedetails/?id=3737335127) 3.4.4 or newer
 - [RitsuLib](https://steamcommunity.com/sharedfiles/filedetails/?id=3747602295) 0.5.11 or newer
-- Slay the Spire 2 Early Access `public-beta` 0.110.x (tested on 0.110.1)
+- Slay the Spire 2 Early Access `public-beta` 0.111.0 (the branch this build targets)
 
 ## Build
 
