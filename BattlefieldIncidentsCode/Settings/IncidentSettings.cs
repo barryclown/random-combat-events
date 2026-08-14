@@ -39,8 +39,8 @@ public sealed class IncidentSettings
     public int ToxicFogPoisonPerHit { get; set; } = 1;
 
     public bool EnableGentleRain { get; set; } = true;
-    public int GentleRainWeight { get; set; } = 8;
-    public int GentleRainHealPercent { get; set; } = 1;
+    public int GentleRainWeight { get; set; } = 14;
+    public int GentleRainHealPercent { get; set; } = 3;
 
     public bool EnableVineSnare { get; set; } = true;
     public int VineSnareWeight { get; set; } = 12;

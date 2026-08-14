@@ -41,24 +41,31 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
 
     public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
     {
-        if (player.Creature.CombatState is not CombatState combatState)
-            return;
+        try
+        {
+            if (player.Creature.CombatState is not CombatState combatState)
+                return;
 
-        var runtime = EnsureState(combatState);
-        if (!runtime.EnabledForCombat)
-            return;
+            var runtime = EnsureState(combatState);
+            if (!runtime.EnabledForCombat)
+                return;
 
-        var round = combatState.RoundNumber;
-        if (round <= runtime.LastProcessedRound)
-            return;
+            var round = combatState.RoundNumber;
+            if (round <= runtime.LastProcessedRound)
+                return;
 
-        // Consume before the first await. Extra turns and additional co-op players share RoundNumber.
-        runtime.LastProcessedRound = round;
-        CloseExpiredToxicFogs(runtime, round);
+            // Consume before the first await. Extra turns and additional co-op players share RoundNumber.
+            runtime.LastProcessedRound = round;
+            CloseExpiredToxicFogs(runtime, round);
 
-        var settings = SettingsBootstrap.Read();
-        ShowWarnings(runtime, round, settings);
-        await ResolveRound(choiceContext, combatState, runtime, settings, round);
+            var settings = SettingsBootstrap.Read();
+            ShowWarnings(runtime, round, settings);
+            await ResolveRound(choiceContext, combatState, runtime, settings, round);
+        }
+        catch (Exception exception)
+        {
+            ReportHookFailure(nameof(AfterPlayerTurnStart), exception);
+        }
     }
 
     public override async Task AfterDamageGiven(
@@ -69,22 +76,29 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
         Creature target,
         CardModel? cardSource)
     {
-        if (result.UnblockedDamage <= 0 ||
-            !props.IsPoweredAttack() ||
-            target.CombatState is not CombatState combatState ||
-            !CombatStates.TryGetValue(combatState, out var runtime) ||
-            !runtime.EnabledForCombat ||
-            !runtime.ActiveToxicFogs.TryGetValue(combatState.RoundNumber, out var toxicFog))
+        try
         {
-            return;
-        }
+            if (result.UnblockedDamage <= 0 ||
+                !props.IsPoweredAttack() ||
+                target.CombatState is not CombatState combatState ||
+                !CombatStates.TryGetValue(combatState, out var runtime) ||
+                !runtime.EnabledForCombat ||
+                !runtime.ActiveToxicFogs.TryGetValue(combatState.RoundNumber, out var toxicFog))
+            {
+                return;
+            }
 
-        await PowerCmd.Apply<PoisonPower>(
-            choiceContext,
-            target,
-            toxicFog.PoisonPerHit,
-            applier: null,
-            cardSource: null);
+            await PowerCmd.Apply<PoisonPower>(
+                choiceContext,
+                target,
+                toxicFog.PoisonPerHit,
+                applier: null,
+                cardSource: null);
+        }
+        catch (Exception exception)
+        {
+            ReportHookFailure(nameof(AfterDamageGiven), exception);
+        }
     }
 
     public override async Task BeforeSideTurnEnd(
@@ -92,50 +106,75 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
         CombatSide side,
         IEnumerable<Creature> participants)
     {
-        var combatState = participants
-            .Select(creature => creature.CombatState)
-            .OfType<CombatState>()
-            .FirstOrDefault();
-        if (combatState == null || !CombatStates.TryGetValue(combatState, out var runtime))
-            return;
-
-        var round = combatState.RoundNumber;
-        if (side == CombatSide.Player && runtime.PendingRockfalls.Remove(round, out var rockfallDamage))
+        try
         {
-            // Remove before awaiting so an extra player-side turn cannot resolve the same rockfall twice.
-            if (runtime.WarningNotices.Remove(round, out var warningNotice))
-                warningNotice.Close();
+            var combatState = participants
+                .Select(creature => creature.CombatState)
+                .OfType<CombatState>()
+                .FirstOrDefault();
+            if (combatState == null || !CombatStates.TryGetValue(combatState, out var runtime))
+                return;
 
-            IncidentToast.ShowInfo(
-                IncidentText.RockfallImpact(rockfallDamage),
-                IncidentText.IncidentTitle(IncidentKind.Rockfall),
-                IncidentText.Icon(IncidentKind.Rockfall));
-            await DamagePlayers(choiceContext, combatState, rockfallDamage);
+            var round = combatState.RoundNumber;
+            if (side == CombatSide.Player && runtime.PendingRockfalls.Remove(round, out var rockfallDamage))
+            {
+                // Remove before awaiting so an extra player-side turn cannot resolve the same rockfall twice.
+                if (runtime.WarningNotices.Remove(round, out var warningNotice))
+                    warningNotice.Close();
+
+                IncidentToast.ShowInfo(
+                    IncidentText.RockfallImpact(rockfallDamage),
+                    IncidentText.IncidentTitle(IncidentKind.Rockfall),
+                    IncidentText.Icon(IncidentKind.Rockfall));
+                await DamagePlayers(choiceContext, combatState, rockfallDamage);
+            }
+
+            var pendingForSide = runtime.PendingSideDamages
+                .Where(pair => pair.Key.Round == round)
+                .OrderBy(pair => pair.Key.SourceTurn)
+                .ThenBy(pair => pair.Key.Kind)
+                .ToList();
+            foreach (var (key, pending) in pendingForSide)
+            {
+                // Consume before the first await so extra turns cannot repeat this side's damage.
+                if (!pending.TryConsume(side))
+                    continue;
+
+                IncidentToast.ShowInfo(
+                    IncidentText.SideDamageImpact(pending, side),
+                    IncidentText.IncidentTitle(pending.Kind),
+                    IncidentText.Icon(pending.Kind));
+                await DamageSide(choiceContext, combatState, side, pending.Damage, pending.Hits);
+
+                if (pending.IsComplete && runtime.PendingSideDamages.Remove(key))
+                    pending.Notice.Close();
+            }
         }
-
-        var pendingForSide = runtime.PendingSideDamages
-            .Where(pair => pair.Key.Round == round)
-            .OrderBy(pair => pair.Key.SourceTurn)
-            .ThenBy(pair => pair.Key.Kind)
-            .ToList();
-        foreach (var (key, pending) in pendingForSide)
+        catch (Exception exception)
         {
-            // Consume before the first await so extra turns cannot repeat this side's damage.
-            if (!pending.TryConsume(side))
-                continue;
-
-            IncidentToast.ShowInfo(
-                IncidentText.SideDamageImpact(pending, side),
-                IncidentText.IncidentTitle(pending.Kind),
-                IncidentText.Icon(pending.Kind));
-            await DamageSide(choiceContext, combatState, side, pending.Damage, pending.Hits);
-
-            if (pending.IsComplete && runtime.PendingSideDamages.Remove(key))
-                pending.Notice.Close();
+            ReportHookFailure(nameof(BeforeSideTurnEnd), exception);
         }
     }
 
     public override Task AfterCombatEnd(CombatRoom room)
+    {
+        try
+        {
+            CleanUpCombat(room);
+        }
+        catch (Exception exception)
+        {
+            ReportHookFailure(nameof(AfterCombatEnd), exception);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    // A mod-side failure must never break the game's combat pipeline; drop the event and keep playing.
+    private static void ReportHookFailure(string hook, Exception exception) =>
+        MainFile.Logger.Error($"{hook} failed; skipping this combat event. {exception}");
+
+    private static void CleanUpCombat(CombatRoom room)
     {
         if (CombatStates.TryGetValue(room.CombatState, out var runtime))
         {
@@ -153,7 +192,6 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
         }
 
         CombatStates.Remove(room.CombatState);
-        return Task.CompletedTask;
     }
 
     private static CombatIncidentState EnsureState(CombatState combatState)

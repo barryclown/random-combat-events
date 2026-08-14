@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Workshop preview (16:9). Original vector artwork built from geometric shapes; no game assets used. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">戰鬥隨機事件 — Random Combat Events</title>
+  <desc id="desc">A dark game-interface banner with a turn forecast showing falling rocks, poison, and healing.</desc>
+
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071018"/>
+      <stop offset="0.52" stop-color="#101a26"/>
+      <stop offset="1" stop-color="#070b11"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#182735" stop-opacity="0.98"/>
+      <stop offset="1" stop-color="#0b131d" stop-opacity="0.98"/>
+    </linearGradient>
+    <linearGradient id="warning" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffb638"/>
+      <stop offset="1" stop-color="#ff7448"/>
+    </linearGradient>
+    <linearGradient id="poison" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#bdff5a"/>
+      <stop offset="1" stop-color="#4cc875"/>
+    </linearGradient>
+    <linearGradient id="heal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#57f0dc"/>
+      <stop offset="1" stop-color="#34aee9"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#78a9c8" stroke-opacity="0.055" stroke-width="2"/>
+    </pattern>
+  </defs>
+
+  <!-- Background and UI frame -->
+  <rect width="1920" height="1080" fill="url(#background)"/>
+  <rect width="1920" height="1080" fill="url(#grid)"/>
+  <path d="M0 0H1920V196C1530 133 1166 163 802 110C500 65 259 93 0 56Z" fill="#1f4151" opacity="0.18"/>
+  <circle cx="1680" cy="150" r="360" fill="#23647c" opacity="0.07"/>
+  <circle cx="150" cy="960" r="300" fill="#ed9a42" opacity="0.05"/>
+  <rect x="32" y="32" width="1856" height="1016" rx="44" fill="none" stroke="#8eb7ca" stroke-opacity="0.2" stroke-width="3"/>
+  <path d="M110 34H1810" stroke="#f0ad45" stroke-width="5" stroke-linecap="round" opacity="0.82"/>
+
+  <!-- Content, vertically centred inside the frame -->
+  <g transform="translate(0 66)">
+
+  <!-- Header -->
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <rect x="118" y="92" width="300" height="62" rx="31" fill="#162c39" stroke="#6ecde0" stroke-opacity="0.45" stroke-width="2"/>
+    <circle cx="156" cy="123" r="10" fill="#69d5e7" filter="url(#glow)"/>
+    <text x="184" y="133" fill="#b9d9e7" font-size="26" font-weight="700" letter-spacing="3.4">BATTLE ALERT</text>
+    <text x="1800" y="133" text-anchor="end" fill="#6f8d9c" font-size="24" font-weight="700" letter-spacing="2.6">TURN FORECAST</text>
+  </g>
+
+  <!-- Title block -->
+  <g>
+    <text x="120" y="524" fill="#f4f7f8"
+          font-family="Microsoft JhengHei, Noto Sans CJK TC, PingFang TC, sans-serif"
+          font-size="128" font-weight="900" letter-spacing="6">戰鬥隨機事件</text>
+    <rect x="120" y="566" width="676" height="70" rx="35" fill="#111f29" stroke="#6f95a8" stroke-opacity="0.42" stroke-width="2"/>
+    <text x="458" y="613" text-anchor="middle" fill="#9dc8d8" font-family="Segoe UI, Arial, sans-serif"
+          font-size="31" font-weight="800" letter-spacing="5.6">RANDOM COMBAT EVENTS</text>
+    <text x="122" y="708" fill="#8fb0be"
+          font-family="Microsoft JhengHei, Noto Sans CJK TC, Segoe UI, sans-serif"
+          font-size="36" font-weight="700" letter-spacing="3">讀懂預兆・改變戰局</text>
+
+    <rect x="120" y="754" width="676" height="72" rx="16" fill="#0a121a" stroke="#547284" stroke-opacity="0.44" stroke-width="2"/>
+    <g font-family="Segoe UI, Arial, sans-serif" fill="#8aa9b7" font-size="22" font-weight="700" letter-spacing="2">
+      <circle cx="164" cy="790" r="9" fill="#ffad3e"/>
+      <text x="188" y="799">HAZARD</text>
+      <circle cx="372" cy="790" r="9" fill="#79dc61"/>
+      <text x="396" y="799">DEBUFF</text>
+      <circle cx="580" cy="790" r="9" fill="#59d6e8"/>
+      <text x="604" y="799">AID</text>
+    </g>
+  </g>
+
+  <!-- Forecast panel -->
+  <g filter="url(#shadow)">
+    <path d="M990 254Q990 210 1034 210H1776Q1820 210 1820 254V706Q1820 750 1776 750H1034Q990 750 990 706Z"
+          fill="url(#panel)" stroke="#66889b" stroke-opacity="0.52" stroke-width="3"/>
+    <path d="M1024 252H1786" stroke="#d9edf4" stroke-opacity="0.08" stroke-width="2"/>
+
+    <!-- Timeline -->
+    <path d="M1155 640H1655" fill="none" stroke="#83a8b7" stroke-width="5" stroke-dasharray="12 16" stroke-linecap="round"/>
+    <path d="M1646 628L1664 640L1646 652" fill="none" stroke="#83a8b7" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <g font-family="Segoe UI, Arial, sans-serif" text-anchor="middle" font-weight="800">
+      <circle cx="1155" cy="640" r="27" fill="#152531" stroke="#ffad3e" stroke-width="5"/>
+      <text x="1155" y="650" fill="#ffd178" font-size="26">1</text>
+      <circle cx="1405" cy="640" r="27" fill="#152531" stroke="#83df63" stroke-width="5"/>
+      <text x="1405" y="650" fill="#c4ff88" font-size="26">2</text>
+      <circle cx="1655" cy="640" r="27" fill="#152531" stroke="#5ed9e8" stroke-width="5"/>
+      <text x="1655" y="650" fill="#9cf5ff" font-size="26">3</text>
+    </g>
+
+    <!-- Falling-rock event tile -->
+    <g transform="translate(1050 296) scale(2.6)">
+      <rect width="80" height="88" rx="14" fill="#111d27" stroke="#f3a444" stroke-opacity="0.75" stroke-width="2"/>
+      <path d="M18 16L23 8L28 16" fill="none" stroke="#ffb54e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M40 15L40 6M36 10L40 6L44 10M60 16L66 9" fill="none" stroke="#ffb54e" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M18 61L25 41L40 34L55 42L63 61L50 72H29Z" fill="url(#warning)"/>
+      <path d="M25 41L40 49L55 42M40 49L50 72M40 49L29 72" fill="none" stroke="#572d20" stroke-opacity="0.55" stroke-width="2"/>
+      <path d="M12 77H68" stroke="#ffb54e" stroke-opacity="0.35" stroke-width="2"/>
+    </g>
+
+    <!-- Poison event tile -->
+    <g transform="translate(1300 296) scale(2.6)">
+      <rect width="80" height="88" rx="14" fill="#111d27" stroke="#75d35d" stroke-opacity="0.75" stroke-width="2"/>
+      <path d="M40 17C40 17 21 41 21 54C21 65 29 73 40 73C51 73 59 65 59 54C59 41 40 17 40 17Z" fill="url(#poison)"/>
+      <path d="M31 54C31 47 37 38 42 31" fill="none" stroke="#e8ffd1" stroke-opacity="0.65" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="37" cy="59" r="3" fill="#184d32"/>
+      <circle cx="47" cy="54" r="4" fill="#184d32"/>
+      <path d="M15 77H65" stroke="#8eea72" stroke-opacity="0.35" stroke-width="2"/>
+    </g>
+
+    <!-- Healing event tile -->
+    <g transform="translate(1550 296) scale(2.6)">
+      <rect width="80" height="88" rx="14" fill="#111d27" stroke="#54cfe4" stroke-opacity="0.75" stroke-width="2"/>
+      <path d="M40 72C35 66 20 55 20 40C20 30 26 23 35 23C41 23 45 27 48 32C51 27 55 23 61 23C70 23 76 30 76 40C76 54 59 67 48 75Z" transform="translate(-8 -1)" fill="url(#heal)"/>
+      <path d="M35 34H45V44H55V54H45V64H35V54H25V44H35Z" fill="#efffff" opacity="0.94"/>
+      <path d="M15 77H65" stroke="#67deed" stroke-opacity="0.35" stroke-width="2"/>
+    </g>
+  </g>
+
+  </g>
+</svg>

@@ -73,7 +73,7 @@
   "incident.warning.damp_sea_wind": "In {0}, Damp Sea Wind will apply {1} {2} and {3} {4} to all players and enemies.",
   "incident.warning.hive_onslaught": "In {0}, Hive Onslaught will begin. For {1}, both sides take {2} damage at the end of their own side's turn. Block can prevent it.",
   "incident.warning.gentle_rain": "In {0}, Gentle Rain will heal every living unit for {1}% of its own max HP, with a minimum of 1 HP.",
-  "incident.warning.default": "A battlefield event will occur in {0}.",
+  "incident.warning.default": "A combat event will occur in {0}.",
   "incident.trigger.rockfall": "The boulders are coming loose! At the end of this turn, all players will take {0} damage. Block can prevent it.",
   "incident.trigger.sword_rain": "Blades fill the sky! Each side will take {0} damage × {1} at the end of its own turn. Block can prevent it.",
   "incident.trigger.toxic_fog": "Toxic Fog covers the battlefield! This turn, after taking unblocked attack damage, a unit gains {0} {1}.",
@@ -88,7 +88,7 @@
   "incident.impact.sword_rain": "Sword Rain falls! {0} are about to take {1} damage × {2}. Block can prevent it.",
   "incident.impact.hive_onslaught": "Hive wave {1}/{2} strikes! {0} are about to take {3} damage. Block can prevent it.",
   "incident.impact.default": "{0} are about to take {1} damage × {2}. Block can prevent it.",
-  "toast.title.incident": "Battlefield Event · {0}",
-  "toast.title.omen": "Battle Omen · Turn {0}",
+  "toast.title.incident": "Combat Event · {0}",
+  "toast.title.omen": "Event Omen · Turn {0}",
   "toast.close_warning": "Close warning"
 }
