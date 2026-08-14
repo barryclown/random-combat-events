@@ -8,8 +8,10 @@ An early-alpha mod for the Slay the Spire 2 Early Access `public-beta` branch. I
 - Standard mode checks every 3–5 turns; each checkpoint has a 50% chance to contain an incident.
 - Advance warnings show the exact target, damage, and effect. They have no countdown bar and can be closed with a dedicated × button.
 - Direct damage resolves at turn end and can be Blocked.
-- Seven incidents are included: Rockfall, Sword Rain, Toxic Fog, Vine Snare, Damp Sea Wind, Hive Onslaught, and Gentle Rain.
-- The in-game settings page exposes presets, schedule controls, combat types, incident toggles, weights, and effect values.
+- Nine incidents are included: Rockfall, Sword Rain, Toxic Fog, Gentle Rain, Neow's Blessing, the Architect's Curse, Vine Snare, Damp Sea Wind, and Hive Onslaught.
+- The blessing and the curse are also rolled once on turn 1, at 33% each. That roll cannot be telegraphed, so it is labelled a Combat Start event and can be switched off on its own.
+- Nothing is scheduled early enough to land before its own warning could be shown, so turn 1 never carries a route incident.
+- A "Combat Events" entry on the main menu opens the settings page directly, alongside presets, schedule controls, combat types, incident toggles, weights, and effect values.
 - Full in-game localization is included for English, Simplified Chinese, and Traditional Chinese. Other locales fall back to English.
 
 The current alpha is designed and tested for single-player. Multiplayer is not supported yet.
@@ -17,7 +19,7 @@ The current alpha is designed and tested for single-player. Multiplayer is not s
 ## Requirements
 
 - [BaseLib](https://steamcommunity.com/sharedfiles/filedetails/?id=3737335127) 3.4.4 or newer
-- [RitsuLib](https://steamcommunity.com/sharedfiles/filedetails/?id=3747602295) 0.5.11 or newer
+- [RitsuLib](https://steamcommunity.com/sharedfiles/filedetails/?id=3747602295) 0.5.12 or newer (older builds cannot start a run on 0.111.0)
 - Slay the Spire 2 Early Access `public-beta` 0.111.0 (the branch this build targets)
 
 ## Build

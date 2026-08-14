@@ -56,11 +56,13 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
 
             // Consume before the first await. Extra turns and additional co-op players share RoundNumber.
             runtime.LastProcessedRound = round;
+            CloseStaleNotices(runtime, round);
             CloseExpiredToxicFogs(runtime, round);
 
             var settings = SettingsBootstrap.Read();
+            await ResolveCombatStart(choiceContext, combatState, runtime, settings, player);
             ShowWarnings(runtime, round, settings);
-            await ResolveRound(choiceContext, combatState, runtime, settings, round);
+            await ResolveRound(choiceContext, combatState, runtime, settings, round, player);
         }
         catch (Exception exception)
         {
@@ -122,11 +124,11 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
                 if (runtime.WarningNotices.Remove(round, out var warningNotice))
                     warningNotice.Close();
 
-                IncidentToast.ShowInfo(
+                TrackRoundNotice(runtime, round,
                     IncidentText.RockfallImpact(rockfallDamage),
                     IncidentText.IncidentTitle(IncidentKind.Rockfall),
                     IncidentText.Icon(IncidentKind.Rockfall));
-                await DamagePlayers(choiceContext, combatState, rockfallDamage);
+                await DamageEveryone(choiceContext, combatState, rockfallDamage);
             }
 
             var pendingForSide = runtime.PendingSideDamages
@@ -140,7 +142,7 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
                 if (!pending.TryConsume(side))
                     continue;
 
-                IncidentToast.ShowInfo(
+                TrackRoundNotice(runtime, round,
                     IncidentText.SideDamageImpact(pending, side),
                     IncidentText.IncidentTitle(pending.Kind),
                     IncidentText.Icon(pending.Kind));
@@ -170,6 +172,51 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    ///     Closes every notice that belongs to a round already gone. Without this the player accumulates
+    ///     messages about turns that have passed, and has to work out which one is current.
+    /// </summary>
+    private static void CloseStaleNotices(CombatIncidentState runtime, int round)
+    {
+        foreach (var stale in runtime.RoundNotices.Keys.Where(key => key < round).ToList())
+        {
+            if (!runtime.RoundNotices.Remove(stale, out var notices))
+                continue;
+
+            foreach (var notice in notices)
+                notice.Close();
+        }
+
+        foreach (var stale in runtime.WarningNotices.Keys.Where(key => key < round).ToList())
+        {
+            if (runtime.WarningNotices.Remove(stale, out var notice))
+                notice.Close();
+        }
+
+        foreach (var (key, pending) in runtime.PendingSideDamages.Where(pair => pair.Key.Round < round).ToList())
+        {
+            if (runtime.PendingSideDamages.Remove(key))
+                pending.Notice.Close();
+        }
+    }
+
+    private static void TrackRoundNotice(
+        CombatIncidentState runtime,
+        int round,
+        string body,
+        string title,
+        Godot.Texture2D? icon)
+    {
+        var notice = IncidentToast.ShowRoundNotice(body, title, icon);
+        if (!runtime.RoundNotices.TryGetValue(round, out var notices))
+        {
+            notices = [];
+            runtime.RoundNotices[round] = notices;
+        }
+
+        notices.Add(notice);
+    }
+
     // A mod-side failure must never break the game's combat pipeline; drop the event and keep playing.
     private static void ReportHookFailure(string hook, Exception exception) =>
         MainFile.Logger.Error($"{hook} failed; skipping this combat event. {exception}");
@@ -189,6 +236,10 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
             foreach (var toxicFog in runtime.ActiveToxicFogs.Values)
                 toxicFog.Notice.Close(immediate: true);
             runtime.ActiveToxicFogs.Clear();
+
+            foreach (var notice in runtime.RoundNotices.Values.SelectMany(notices => notices))
+                notice.Close(immediate: true);
+            runtime.RoundNotices.Clear();
         }
 
         CombatStates.Remove(room.CombatState);
@@ -221,6 +272,53 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
         return state;
     }
 
+    /// <summary>
+    ///     Rolls the once-per-combat blessing or curse. This is deliberately independent of the turn route:
+    ///     it has no warning to give and nothing to counter, so folding it into the timeline's weights would
+    ///     mix two different kinds of decision.
+    /// </summary>
+    private static async Task ResolveCombatStart(
+        PlayerChoiceContext choiceContext,
+        CombatState combatState,
+        CombatIncidentState runtime,
+        IncidentSettings settings,
+        Player player)
+    {
+        if (runtime.CombatStartResolved)
+            return;
+
+        // Consume before the first await so a second player's turn start cannot roll it again.
+        runtime.CombatStartResolved = true;
+
+        if (!BoonExecutor.IsCombatStartEnabledFor(combatState, settings))
+            return;
+
+        // A separate seed stream keeps the combat-start roll stable when route settings change.
+        var kind = BoonExecutor.RollCombatStart(runtime.Timeline.Seed ^ 0x9E3779B97F4A7C15UL, settings);
+        if (kind == null)
+        {
+            MainFile.Logger.Info("Combat-start boon: none rolled.");
+            return;
+        }
+
+        var option = await BoonExecutor.Apply(
+            kind.Value, runtime.Timeline.Seed ^ 0xC2B2AE3D27D4EB4FUL, choiceContext, combatState, player);
+        if (option == null)
+        {
+            MainFile.Logger.Warn($"Combat-start {kind} rolled but no usable option was available.");
+            return;
+        }
+
+        MainFile.Logger.Info($"Combat-start boon: {kind} -> {option.Id}.");
+        var boonKind = kind.Value == BoonKind.Blessing
+            ? IncidentKind.NeowsBlessing
+            : IncidentKind.ArchitectsCurse;
+        TrackRoundNotice(runtime, combatState.RoundNumber,
+            IncidentText.BoonTrigger(kind.Value, option),
+            IncidentText.CombatStartTitle(boonKind),
+            IncidentText.Icon(boonKind));
+    }
+
     private static void ShowWarnings(CombatIncidentState runtime, int round, IncidentSettings settings)
     {
         var warningTurns = settings.WarningTurns;
@@ -246,7 +344,8 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
         CombatState combatState,
         CombatIncidentState runtime,
         IncidentSettings settings,
-        int round)
+        int round,
+        Player player)
     {
         if (runtime.WarningNotices.Remove(round, out var warningNotice))
             warningNotice.Close();
@@ -311,15 +410,38 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
                 continue;
             }
 
-            ShowTrigger(checkpoint, settings);
+            if (checkpoint.Incident is IncidentKind.NeowsBlessing or IncidentKind.ArchitectsCurse)
+            {
+                // The toast has to name what was actually handed out, which is only known after it fires.
+                var boonKind = checkpoint.Incident == IncidentKind.NeowsBlessing
+                    ? BoonKind.Blessing
+                    : BoonKind.Curse;
+                var option = await BoonExecutor.Apply(
+                    boonKind, checkpoint.EffectSeed, choiceContext, combatState, player);
+                if (option != null)
+                {
+                    TrackRoundNotice(runtime, round,
+                        IncidentText.BoonTrigger(boonKind, option),
+                        IncidentText.IncidentTitle(checkpoint.Incident.Value),
+                        IncidentText.Icon(checkpoint.Incident.Value));
+                }
+
+                continue;
+            }
+
+            ShowTrigger(runtime, round, checkpoint, settings);
             await Execute(checkpoint.Incident!.Value, choiceContext, combatState, settings);
         }
     }
 
-    private static void ShowTrigger(ScheduledCheckpoint checkpoint, IncidentSettings settings)
+    private static void ShowTrigger(
+        CombatIncidentState runtime,
+        int round,
+        ScheduledCheckpoint checkpoint,
+        IncidentSettings settings)
     {
         var kind = checkpoint.Incident!.Value;
-        IncidentToast.ShowInfo(
+        TrackRoundNotice(runtime, round,
             IncidentText.Trigger(checkpoint, settings),
             IncidentText.IncidentTitle(kind),
             IncidentText.Icon(kind));
@@ -356,17 +478,24 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
             case IncidentKind.GentleRain:
                 await HealAllLiving(combatState, settings.GentleRainHealPercent);
                 break;
+            case IncidentKind.NeowsBlessing:
+            case IncidentKind.ArchitectsCurse:
+                // Resolved inline in ResolveRound so the toast can name what was handed out.
+                break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(incident), incident, null);
         }
     }
 
-    private static Task<IEnumerable<MegaCrit.Sts2.Core.Entities.Creatures.DamageResult>> DamagePlayers(
+    /// <summary>
+    ///     Rocks fall on the whole room, not on one side of it.
+    /// </summary>
+    private static Task<IEnumerable<MegaCrit.Sts2.Core.Entities.Creatures.DamageResult>> DamageEveryone(
         PlayerChoiceContext choiceContext,
         CombatState combatState,
         decimal damage) => CreatureCmd.Damage(
         choiceContext,
-        combatState.PlayerCreatures.Where(creature => creature.IsHittable).ToList(),
+        HittableCreatures(combatState),
         damage,
         ValueProp.Unpowered,
         null,

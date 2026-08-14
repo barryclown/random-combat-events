@@ -88,6 +88,33 @@ public static class SettingsBootstrap
                     BindBool(s => s.EnableBossCombats, (s, value) => s.EnableBossCombats = value),
                     T("settings.combat.boss.description",
                         "Enabled by default in this version. If a specific Boss conflicts, only that combination will be disabled later.")))
+            .AddSection("combat_start", section => section
+                .WithTitle(T("settings.section.combat_start", "Combat Start"))
+                .AddToggle("combat_start_enabled",
+                    T("settings.combat_start.enabled", "Enable Combat-Start Blessing and Curse"),
+                    BindBool(s => s.EnableCombatStartBoons, (s, value) => s.EnableCombatStartBoons = value),
+                    T("settings.combat_start.description",
+                        "Rolled once when combat begins, separately from the turn route. The remainder of the two chances is no effect."))
+                .AddIntSlider("combat_start_blessing",
+                    T("settings.combat_start.blessing", "Neow's Blessing Chance"),
+                    BindInt(s => s.CombatStartBlessingPercent, (s, value) => s.CombatStartBlessingPercent = value),
+                    0, 100, 1, value => $"{value}%")
+                .AddIntSlider("combat_start_curse",
+                    T("settings.combat_start.curse", "Architect's Curse Chance"),
+                    BindInt(s => s.CombatStartCursePercent, (s, value) => s.CombatStartCursePercent = value),
+                    0, 100, 1, value => $"{value}%")
+                .AddToggle("combat_start_normal",
+                    T("settings.combat_start.normal", "Combat Start in Normal Combat"),
+                    BindBool(s => s.EnableCombatStartNormalCombats,
+                        (s, value) => s.EnableCombatStartNormalCombats = value))
+                .AddToggle("combat_start_elite",
+                    T("settings.combat_start.elite", "Combat Start in Elite Combat"),
+                    BindBool(s => s.EnableCombatStartEliteCombats,
+                        (s, value) => s.EnableCombatStartEliteCombats = value))
+                .AddToggle("combat_start_boss",
+                    T("settings.combat_start.boss", "Combat Start in Boss Combat"),
+                    BindBool(s => s.EnableCombatStartBossCombats,
+                        (s, value) => s.EnableCombatStartBossCombats = value)))
             .AddSection("more", section => section
                 .WithTitle(T("settings.section.individual", "Individual Content"))
                 .AddSubpage("incidents", T("settings.incidents.page_title", "Event Toggles and Values"),
@@ -131,7 +158,17 @@ public static class SettingsBootstrap
                     BindInt(s => s.GentleRainHealPercent, (s, value) => s.GentleRainHealPercent = value), 1, 20,
                     valueFormatter: value => ModLocalization.Format("format.max_hp_percent", "{0}% max HP", value))
                 .AddIntSlider("gentle_rain_weight", T("settings.gentle_rain.weight", "Gentle Rain Weight"),
-                    BindInt(s => s.GentleRainWeight, (s, value) => s.GentleRainWeight = value), 0, 30))
+                    BindInt(s => s.GentleRainWeight, (s, value) => s.GentleRainWeight = value), 0, 30)
+                .AddToggle("neows_blessing", T("settings.incident.neows_blessing", "Neow's Blessing"),
+                    BindBool(s => s.EnableNeowsBlessing, (s, value) => s.EnableNeowsBlessing = value))
+                .AddIntSlider("neows_blessing_weight",
+                    T("settings.neows_blessing.weight", "Neow's Blessing Weight"),
+                    BindInt(s => s.NeowsBlessingWeight, (s, value) => s.NeowsBlessingWeight = value), 0, 30)
+                .AddToggle("architects_curse", T("settings.incident.architects_curse", "Architect's Curse"),
+                    BindBool(s => s.EnableArchitectsCurse, (s, value) => s.EnableArchitectsCurse = value))
+                .AddIntSlider("architects_curse_weight",
+                    T("settings.architects_curse.weight", "Architect's Curse Weight"),
+                    BindInt(s => s.ArchitectsCurseWeight, (s, value) => s.ArchitectsCurseWeight = value), 0, 30))
             .AddSection("acts", section => section
                 .WithTitle(T("settings.section.act_incidents", "Act-Specific Events"))
                 .AddToggle("vine_snare", T("settings.incident.vine_snare", "Overgrowth: Vine Snare"),

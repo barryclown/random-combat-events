@@ -9,11 +9,18 @@ internal sealed class CombatIncidentState
     public required ActTheme ActTheme { get; init; }
     public required bool EnabledForCombat { get; init; }
     public int LastProcessedRound { get; set; }
+    public bool CombatStartResolved { get; set; }
     public HashSet<int> WarnedCheckpointTurns { get; } = [];
     public Dictionary<int, decimal> PendingRockfalls { get; } = [];
     public Dictionary<PendingSideDamageKey, PendingSideDamage> PendingSideDamages { get; } = [];
     public Dictionary<int, ActiveToxicFog> ActiveToxicFogs { get; } = [];
     public Dictionary<int, IncidentWarningNotice> WarningNotices { get; } = [];
+
+    /// <summary>
+    ///     Notices that describe what happened on a given round. They are closed when the next round
+    ///     begins rather than on a timer, so the screen always shows the current round and nothing older.
+    /// </summary>
+    public Dictionary<int, List<IncidentWarningNotice>> RoundNotices { get; } = [];
 }
 
 internal readonly record struct PendingSideDamageKey(int SourceTurn, int Round, IncidentKind Kind);

@@ -24,6 +24,10 @@ public static class IncidentTimelineGenerator
             var effectSeed = random.NextUInt64();
             var canSchedule = options.AllowOverlap || turn > occupiedThroughTurn;
 
+            // Keep the checkpoint rhythm untouched but leave the turn empty when there is no room to
+            // announce an incident before it lands.
+            canSchedule &= turn >= options.FirstTelegraphableTurn;
+
             if (canSchedule && options.Incidents.Count > 0 &&
                 random.NextInt(0, 100) < options.IncidentChancePercent)
             {

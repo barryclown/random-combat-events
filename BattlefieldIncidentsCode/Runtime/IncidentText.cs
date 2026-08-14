@@ -19,7 +19,50 @@ internal static class IncidentText
         IncidentKind.DampSeaWind => L("incident.name.damp_sea_wind", "Damp Sea Wind"),
         IncidentKind.HiveOnslaught => L("incident.name.hive_onslaught", "Hive Onslaught"),
         IncidentKind.GentleRain => L("incident.name.gentle_rain", "Gentle Rain"),
+        IncidentKind.NeowsBlessing => L("incident.name.neows_blessing", "Neow's Blessing"),
+        IncidentKind.ArchitectsCurse => L("incident.name.architects_curse", "Architect's Curse"),
         _ => kind.ToString(),
+    };
+
+    /// <summary>
+    ///     Describes what a blessing or curse just handed out. Card options borrow the game's own card
+    ///     title so the notice always matches what the player sees on the card.
+    /// </summary>
+    public static string BoonTrigger(BoonKind kind, BoonOption option)
+    {
+        var subject = option.Payload == BoonPayload.Card
+            ? BoonResolver.TitleFor(option) ?? option.Id
+            : PowerLabel(option);
+
+        if (kind == BoonKind.Blessing)
+        {
+            return option.Payload == BoonPayload.Card
+                ? F("boon.blessing.card", "Neow smiles on you! {0} is added to your hand.", subject)
+                : F("boon.blessing.power", "Neow smiles on you! You gain {0} {1}.", option.Amount, subject);
+        }
+
+        return option.Payload == BoonPayload.Card
+            ? F("boon.curse.card", "The Architect meddles! {0} is shuffled into your {1}.",
+                subject, PileLabel(option.Pile))
+            : F("boon.curse.power", "The Architect meddles! You suffer {0} {1}.", option.Amount, subject);
+    }
+
+    private static string PileLabel(BoonPile pile) => pile switch
+    {
+        BoonPile.Draw => L("boon.pile.draw", "draw pile"),
+        BoonPile.Discard => L("boon.pile.discard", "discard pile"),
+        _ => L("boon.pile.hand", "hand"),
+    };
+
+    private static string PowerLabel(BoonOption option) => option.Power switch
+    {
+        BoonPower.Strength or BoonPower.StrengthDown => PowerName<StrengthPower>(),
+        BoonPower.Dexterity => PowerName<DexterityPower>(),
+        BoonPower.Artifact => PowerName<ArtifactPower>(),
+        BoonPower.Vulnerable => PowerName<VulnerablePower>(),
+        BoonPower.Weak => PowerName<WeakPower>(),
+        BoonPower.Frail => PowerName<FrailPower>(),
+        _ => option.Id,
     };
 
     public static string Warning(
@@ -60,7 +103,13 @@ internal static class IncidentText
             F("incident.warning.gentle_rain",
                 "In {0}, Gentle Rain will heal every living unit for {1}% of its own max HP, with a minimum of 1 HP.",
                 ModLocalization.Turns(turnsRemaining), settings.GentleRainHealPercent),
-        _ => F("incident.warning.default", "A battlefield event will occur in {0}.",
+        IncidentKind.NeowsBlessing =>
+            F("incident.warning.neows_blessing", "In {0}, Neow's Blessing will grant you a gift.",
+                ModLocalization.Turns(turnsRemaining)),
+        IncidentKind.ArchitectsCurse =>
+            F("incident.warning.architects_curse", "In {0}, the Architect's Curse will burden you.",
+                ModLocalization.Turns(turnsRemaining)),
+        _ => F("incident.warning.default", "A combat event will occur in {0}.",
             ModLocalization.Turns(turnsRemaining)),
     };
 
@@ -125,11 +174,19 @@ internal static class IncidentText
         };
     }
 
+    /// <summary>
+    ///     Combat-start boons get their own title. They are the one thing that cannot be announced a turn
+    ///     ahead, so the player needs to see at a glance that this one came from the opening roll rather
+    ///     than from the turn route.
+    /// </summary>
+    public static string CombatStartTitle(IncidentKind kind) =>
+        F("toast.title.combat_start", "Combat Start · {0}", Name(kind));
+
     public static string IncidentTitle(IncidentKind kind) =>
-        F("toast.title.incident", "Battlefield Event · {0}", Name(kind));
+        F("toast.title.incident", "Combat Event · {0}", Name(kind));
 
     public static string OmenTitle(int turn) =>
-        F("toast.title.omen", "Battle Omen · Turn {0}", turn);
+        F("toast.title.omen", "Event Omen · Turn {0}", turn);
 
     public static Texture2D Icon(IncidentKind kind) => kind switch
     {
@@ -140,6 +197,8 @@ internal static class IncidentText
         IncidentKind.DampSeaWind => ModelDb.Power<WeakPower>().Icon,
         IncidentKind.HiveOnslaught => ModelDb.Power<PersonalHivePower>().Icon,
         IncidentKind.GentleRain => ModelDb.Power<RegenPower>().Icon,
+        IncidentKind.NeowsBlessing => ModelDb.Power<StrengthPower>().Icon,
+        IncidentKind.ArchitectsCurse => ModelDb.Power<FrailPower>().Icon,
         _ => ModelDb.Power<VulnerablePower>().Icon,
     };
 

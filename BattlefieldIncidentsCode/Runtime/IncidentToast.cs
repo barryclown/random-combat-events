@@ -17,6 +17,22 @@ internal static class IncidentToast
     public static void ShowInfo(string body, string title, Texture2D? image) =>
         ShowTimed(body, title, image, RitsuToastLevel.Info);
 
+    /// <summary>
+    /// A notice about what is happening this round. It stays until the round it belongs to is over
+    /// rather than expiring on a timer, so the player never reads a message about a turn that has
+    /// already passed.
+    /// </summary>
+    public static IncidentWarningNotice ShowRoundNotice(string body, string title, Texture2D? image)
+    {
+        var request = new RitsuToastRequest(body, title, image, RitsuToastLevel.Info)
+            .Persistent()
+            .WithDismissOnClick(false);
+        var notice = new IncidentWarningNotice(request);
+        ManualWarnings.Add(request, notice);
+        notice.Handle = RitsuToastService.ShowTracked(request);
+        return notice;
+    }
+
     public static void ShowTimedWarning(string body, string title, Texture2D? image) =>
         ShowTimed(body, title, image, RitsuToastLevel.Warning);
 

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Godot.NET.Sdk/4.5.1" InitialTargets="CheckDependencyPaths">
+<Project Sdk="Godot.NET.Sdk/4.5.1" InitialTargets="CheckDependencyPaths">
     <Import Project=".\Sts2PathDiscovery.props"/>
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
@@ -42,7 +42,7 @@
              BaseLib's separately released StS2 0.110 compatibility fixes. -->
         <PackageReference Include="Alchyr.Sts2.BaseLib" Version="3.3.8" PrivateAssets="All"/>
         <PackageReference Include="Alchyr.Sts2.ModAnalyzers" Version="0.1.9" PrivateAssets="All" />
-        <PackageReference Include="STS2.RitsuLib" Version="0.5.11" PrivateAssets="All" />
+        <PackageReference Include="STS2.RitsuLib" Version="0.5.12" PrivateAssets="All" />
     </ItemGroup>
 
     <ItemGroup>

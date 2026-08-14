@@ -56,6 +56,20 @@ public sealed class IncidentSettings
     public int HiveOnslaughtDamage { get; set; } = 5;
     public int HiveOnslaughtDuration { get; set; } = 3;
 
+    public bool EnableNeowsBlessing { get; set; } = true;
+    public int NeowsBlessingWeight { get; set; } = 10;
+
+    public bool EnableArchitectsCurse { get; set; } = true;
+    public int ArchitectsCurseWeight { get; set; } = 10;
+
+    // Combat-start boons roll once per combat, independently of the turn route above.
+    public bool EnableCombatStartBoons { get; set; } = true;
+    public int CombatStartBlessingPercent { get; set; } = 33;
+    public int CombatStartCursePercent { get; set; } = 33;
+    public bool EnableCombatStartNormalCombats { get; set; } = true;
+    public bool EnableCombatStartEliteCombats { get; set; } = true;
+    public bool EnableCombatStartBossCombats { get; set; } = true;
+
     public void ApplyPreset(IncidentPreset preset)
     {
         Preset = preset;
@@ -99,7 +113,8 @@ public sealed class IncidentSettings
             maximumTurn,
             actTheme,
             AllowOverlap,
-            BuildIncidentWeights(actTheme));
+            BuildIncidentWeights(actTheme),
+            Math.Max(0, WarningTurns) + 1);
     }
 
     private IReadOnlyList<WeightedIncident> BuildIncidentWeights(ActTheme actTheme)
@@ -109,6 +124,8 @@ public sealed class IncidentSettings
         Add(EnableSwordRain, IncidentKind.SwordRain, SwordRainWeight, duration: 1);
         Add(EnableToxicFog, IncidentKind.ToxicFog, ToxicFogWeight, duration: 1);
         Add(EnableGentleRain, IncidentKind.GentleRain, GentleRainWeight, duration: 1);
+        Add(EnableNeowsBlessing, IncidentKind.NeowsBlessing, NeowsBlessingWeight, duration: 1);
+        Add(EnableArchitectsCurse, IncidentKind.ArchitectsCurse, ArchitectsCurseWeight, duration: 1);
 
         switch (actTheme)
         {
