@@ -52,7 +52,7 @@
 
   <!-- Header -->
   <g font-family="Segoe UI, Arial, sans-serif">
-    <rect x="34" y="38" width="132" height="30" rx="15" fill="#162c39" stroke="#6ecde0" stroke-opacity="0.45"/>
+    <rect x="34" y="38" width="146" height="30" rx="15" fill="#162c39" stroke="#6ecde0" stroke-opacity="0.45"/>
     <circle cx="52" cy="53" r="5" fill="#69d5e7" filter="url(#glow)"/>
     <text x="65" y="58" fill="#b9d9e7" font-size="12" font-weight="700" letter-spacing="1.8">BATTLE ALERT</text>
     <text x="476" y="59" text-anchor="end" fill="#6f8d9c" font-size="11" font-weight="700" letter-spacing="1.2">TURN FORECAST</text>
