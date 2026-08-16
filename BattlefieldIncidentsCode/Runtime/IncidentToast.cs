@@ -22,7 +22,14 @@ internal static class IncidentToast
     /// rather than expiring on a timer, so the player never reads a message about a turn that has
     /// already passed.
     /// </summary>
-    public static IncidentWarningNotice ShowRoundNotice(string body, string title, Texture2D? image)
+    public static IncidentWarningNotice ShowRoundNotice(string body, string title, Texture2D? image) =>
+        ShowPersistentInfo(body, title, image);
+
+    /// <summary>
+    /// A notice that stays on screen until its owner closes it. Used for conditions that last longer
+    /// than a single round, such as a unit that is still holding an unspent Last Miracle.
+    /// </summary>
+    public static IncidentWarningNotice ShowPersistentInfo(string body, string title, Texture2D? image)
     {
         var request = new RitsuToastRequest(body, title, image, RitsuToastLevel.Info)
             .Persistent()

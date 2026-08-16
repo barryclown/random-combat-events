@@ -32,6 +32,14 @@ internal static class ModLocalization
         ? Format("format.turn.one", "{0} turn", value)
         : Format("format.turn.other", "{0} turns", value);
 
+    /// <summary>
+    ///     Chances too fine for whole percents are stored in permille, so 5 reads back as 0.5%.
+    /// </summary>
+    internal static string Permille(int value) =>
+        Format("format.permille_percent", "{0}%", value / 10m);
+
+    internal static string Gold(int value) => Format("format.gold", "{0} gold", value);
+
     internal static string Layers(int value) => value == 1
         ? Format("format.layer.one", "{0} stack", value)
         : Format("format.layer.other", "{0} stacks", value);

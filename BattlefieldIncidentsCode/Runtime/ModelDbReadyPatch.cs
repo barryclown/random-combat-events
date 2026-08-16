@@ -16,6 +16,10 @@ internal static class ModelDbReadyPatch
         try
         {
             BoonResolver.EnsureAudited();
+
+            // Built now rather than on the first summon: it reads the game's encounter tables, so doing
+            // it here proves the exclusion list still lines up with the real data before a fight needs it.
+            MonsterPools.Warm();
         }
         catch (Exception exception)
         {

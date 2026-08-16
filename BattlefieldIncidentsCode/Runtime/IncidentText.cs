@@ -21,8 +21,37 @@ internal static class IncidentText
         IncidentKind.GentleRain => L("incident.name.gentle_rain", "Gentle Rain"),
         IncidentKind.NeowsBlessing => L("incident.name.neows_blessing", "Neow's Blessing"),
         IncidentKind.ArchitectsCurse => L("incident.name.architects_curse", "Architect's Curse"),
+        IncidentKind.Laser => L("incident.name.laser", "Laser"),
+        IncidentKind.FreeSummon => L("incident.name.free_summon", "Wandering Monster"),
+        IncidentKind.Mercenary => L("incident.name.mercenary", "Mercenary"),
+        IncidentKind.EnemyRecruit => L("incident.name.enemy_recruit", "Enemy Recruit"),
+        IncidentKind.Challenge => L("incident.name.challenge", "Challenger"),
+        IncidentKind.LastMiracle => L("incident.name.last_miracle", "Last Miracle"),
+        IncidentKind.VakuusTakeover => L("incident.name.vakuu", "Vakuu's Takeover"),
+        IncidentKind.DarvsGamble => L("incident.name.darv", "Darv's Gamble"),
+        IncidentKind.NonupeipesGift => L("incident.name.nonupeipe", "Nonupeipe's Gift"),
+        IncidentKind.TanxsArmory => L("incident.name.tanx", "Tanx's Armory"),
+        IncidentKind.TezcatarasEmber => L("incident.name.tezcatara", "Tezcatara's Ember"),
+        IncidentKind.PaelsBlessing => L("incident.name.pael", "Pael's Blessing"),
+        IncidentKind.OrobassOffer => L("incident.name.orobas", "Orobas's Offer"),
+        IncidentKind.StranglingVines => L("incident.name.strangling_vines", "Strangling Vines"),
         _ => kind.ToString(),
     };
+
+    /// <summary>
+    ///     Announced at combat start, while the unit is still standing. A save the player cannot see
+    ///     coming would read as the game refusing a kill, and it would hide the one piece of
+    ///     information worth having: that this unit needs to be hit twice.
+    /// </summary>
+    public static string MiracleGranted(string unitName) =>
+        F("miracle.granted",
+            "A Last Miracle watches over {0}. The first lethal blow it takes this combat leaves it at 1 HP instead.",
+            unitName);
+
+    public static string MiracleTrigger(string unitName) =>
+        F("miracle.trigger",
+            "Last Miracle! {0} holds on at 1 HP. The charge is spent, so the next lethal blow lands.",
+            unitName);
 
     /// <summary>
     ///     Describes what a blessing or curse just handed out. Card options borrow the game's own card
@@ -65,10 +94,15 @@ internal static class IncidentText
         _ => option.Id,
     };
 
+    /// <param name="playerLaserDamage">
+    ///     What the laser works out to for the player reading the notice. A percentage of health means
+    ///     nothing at a glance, so the one number they can act on has to be spelled out.
+    /// </param>
     public static string Warning(
         ScheduledCheckpoint checkpoint,
         int turnsRemaining,
-        IncidentSettings settings) => checkpoint.Incident switch
+        IncidentSettings settings,
+        decimal playerLaserDamage) => checkpoint.Incident switch
     {
         IncidentKind.Rockfall =>
             F("incident.warning.rockfall",
@@ -99,6 +133,26 @@ internal static class IncidentText
                 "In {0}, Hive Onslaught will begin. For {1}, both sides take {2} damage at the end of their own side's turn. Block can prevent it.",
                 ModLocalization.Turns(turnsRemaining), ModLocalization.Turns(checkpoint.Duration),
                 settings.HiveOnslaughtDamage),
+        IncidentKind.Laser =>
+            F("incident.warning.laser",
+                "In {0}, a laser will sweep the field. Every unit takes {1}% of its own max HP at the end of its own side's turn, and you will take {2}. Block can prevent it.",
+                ModLocalization.Turns(turnsRemaining), settings.LaserHpPercent, playerLaserDamage),
+        IncidentKind.FreeSummon =>
+            F("incident.warning.free_summon",
+                "In {0}, another monster will wander into the fight and pick a side.",
+                ModLocalization.Turns(turnsRemaining)),
+        IncidentKind.Mercenary =>
+            F("incident.warning.mercenary",
+                "In {0}, a monster will offer to fight for you for gold.",
+                ModLocalization.Turns(turnsRemaining)),
+        IncidentKind.EnemyRecruit =>
+            F("incident.warning.enemy_recruit",
+                "In {0}, a monster will move to join the enemy, and gold will be able to change its mind.",
+                ModLocalization.Turns(turnsRemaining)),
+        IncidentKind.Challenge =>
+            F("incident.warning.challenge",
+                "In {0}, something will ask to join the fight against you, for extra spoils.",
+                ModLocalization.Turns(turnsRemaining)),
         IncidentKind.GentleRain =>
             F("incident.warning.gentle_rain",
                 "In {0}, Gentle Rain will heal every living unit for {1}% of its own max HP, with a minimum of 1 HP.",
@@ -109,11 +163,40 @@ internal static class IncidentText
         IncidentKind.ArchitectsCurse =>
             F("incident.warning.architects_curse", "In {0}, the Architect's Curse will burden you.",
                 ModLocalization.Turns(turnsRemaining)),
+        IncidentKind.VakuusTakeover =>
+            F("incident.warning.vakuu",
+                "In {0}, Vakuu will offer to take the turn after that off your hands.",
+                ModLocalization.Turns(turnsRemaining)),
+        IncidentKind.DarvsGamble =>
+            F("incident.warning.darv",
+                "In {0}, Darv will offer a full hand in exchange for knowing what anything costs.",
+                ModLocalization.Turns(turnsRemaining)),
+        IncidentKind.NonupeipesGift =>
+            F("incident.warning.nonupeipe", "In {0}, Nonupeipe will leave you a gift.",
+                ModLocalization.Turns(turnsRemaining)),
+        IncidentKind.TanxsArmory =>
+            F("incident.warning.tanx", "In {0}, Tanx will throw you a weapon for that turn.",
+                ModLocalization.Turns(turnsRemaining)),
+        IncidentKind.TezcatarasEmber =>
+            F("incident.warning.tezcatara",
+                "In {0}, Tezcatara will lend you a relic cast in wax, good until this fight ends.",
+                ModLocalization.Turns(turnsRemaining)),
+        IncidentKind.PaelsBlessing =>
+            F("incident.warning.pael",
+                "In {0}, Pael will promise you energy and a card for the turn after that.",
+                ModLocalization.Turns(turnsRemaining)),
+        IncidentKind.OrobassOffer =>
+            F("incident.warning.orobas",
+                "In {0}, Orobas will offer you a card from outside your own discipline.",
+                ModLocalization.Turns(turnsRemaining)),
         _ => F("incident.warning.default", "A combat event will occur in {0}.",
             ModLocalization.Turns(turnsRemaining)),
     };
 
-    public static string Trigger(ScheduledCheckpoint checkpoint, IncidentSettings settings) => checkpoint.Incident switch
+    public static string Trigger(
+        ScheduledCheckpoint checkpoint,
+        IncidentSettings settings,
+        decimal playerLaserDamage) => checkpoint.Incident switch
     {
         IncidentKind.Rockfall =>
             F("incident.trigger.rockfall",
@@ -136,6 +219,10 @@ internal static class IncidentText
                 "Damp Sea Wind erodes the battlefield! All players and enemies gain {0} {1} and {2} {3}.",
                 settings.DampSeaWindWeak, PowerName<WeakPower>(), settings.DampSeaWindFrail,
                 PowerName<FrailPower>()),
+        IncidentKind.Laser =>
+            F("incident.trigger.laser",
+                "A laser sweeps the field! Every unit takes {0}% of its own max HP at the end of its own side's turn, and you will take {1}. Block can prevent it.",
+                settings.LaserHpPercent, playerLaserDamage),
         IncidentKind.HiveOnslaught => HiveWave(checkpoint, 1, settings),
         IncidentKind.GentleRain =>
             F("incident.trigger.gentle_rain",
@@ -164,6 +251,14 @@ internal static class IncidentText
                 F("incident.impact.sword_rain",
                     "Sword Rain falls! {0} are about to take {1} damage × {2}. Block can prevent it.",
                     targets, pending.Damage, pending.Hits),
+            IncidentKind.Laser when side == CombatSide.Player =>
+                F("incident.impact.laser_player",
+                    "The laser fires! All players are about to take {0}, which is {1}% of max HP. Block can prevent it.",
+                    pending.PlayerDamage, pending.DamagePercent),
+            IncidentKind.Laser =>
+                F("incident.impact.laser_enemies",
+                    "The laser fires! {0} are about to take {1}% of their own max HP each.",
+                    targets, pending.DamagePercent),
             IncidentKind.HiveOnslaught =>
                 F("incident.impact.hive_onslaught",
                     "Hive wave {1}/{2} strikes! {0} are about to take {3} damage. Block can prevent it.",
@@ -199,8 +294,211 @@ internal static class IncidentText
         IncidentKind.GentleRain => ModelDb.Power<RegenPower>().Icon,
         IncidentKind.NeowsBlessing => ModelDb.Power<StrengthPower>().Icon,
         IncidentKind.ArchitectsCurse => ModelDb.Power<FrailPower>().Icon,
+        IncidentKind.Laser => ModelDb.Power<LightningRodPower>().Icon,
+        IncidentKind.FreeSummon => ModelDb.Power<ArtifactPower>().Icon,
+        IncidentKind.Mercenary => ModelDb.Power<GuardedPower>().Icon,
+        IncidentKind.EnemyRecruit => ModelDb.Power<DexterityPower>().Icon,
+        IncidentKind.Challenge => ModelDb.Power<StrengthPower>().Icon,
+        IncidentKind.LastMiracle => ModelDb.Power<BufferPower>().Icon,
+        IncidentKind.VakuusTakeover => ModelDb.Power<FanOfKnivesPower>().Icon,
+        IncidentKind.DarvsGamble => ModelDb.Power<ConfusedPower>().Icon,
+        IncidentKind.NonupeipesGift => ModelDb.Power<RegenPower>().Icon,
+        IncidentKind.TanxsArmory => ModelDb.Power<StrengthPower>().Icon,
+        IncidentKind.TezcatarasEmber => ModelDb.Power<ArtifactPower>().Icon,
+        IncidentKind.PaelsBlessing => ModelDb.Power<DexterityPower>().Icon,
+        IncidentKind.OrobassOffer => ModelDb.Power<BufferPower>().Icon,
+        IncidentKind.StranglingVines => ModelDb.Power<VulnerablePower>().Icon,
         _ => ModelDb.Power<VulnerablePower>().Icon,
     };
+
+    // The Ancients. Each one names what it actually did, because "a blessing occurred" is not something
+    // a player can plan the next turn around.
+
+    public static string VakuuOffer() =>
+        L("ancient.vakuu.offer",
+            "Vakuu reaches for your hands. Let go, and next turn it plays every card you are holding — in the order it finds them, at whatever it feels like — and burns each one afterwards, playable or not.");
+
+    public static string VakuuAccepted() =>
+        L("ancient.vakuu.accepted", "You let go. Next turn is Vakuu's.");
+
+    public static string VakuuDeclined() =>
+        L("ancient.vakuu.declined", "You keep hold of your hand. Vakuu withdraws.");
+
+    public static string VakuuTrigger() =>
+        L("ancient.vakuu.trigger", "Vakuu plays your hand and burns what it touched.");
+
+    public static string DarvOffer() =>
+        L("ancient.darv.offer",
+            "Darv offers to fill your hand next turn. The price is that every card you draw after that costs whatever it pleases, for the rest of this fight.");
+
+    public static string DarvAccepted() =>
+        L("ancient.darv.accepted", "Darv shakes on it. Your hand fills next turn.");
+
+    public static string DarvDeclined() =>
+        L("ancient.darv.declined", "You turn Darv down. It shrugs and drifts off.");
+
+    public static string DarvTrigger() =>
+        L("ancient.darv.trigger",
+            "Darv fills your hand, and the prices come loose. Every card drawn from here costs what it likes.");
+
+    public static string NonupeipeMaxHp(int amount) =>
+        F("ancient.nonupeipe.max_hp", "Nonupeipe leaves you something warm. Everyone gains {0} max HP.",
+            amount);
+
+    public static string NonupeipeGold(int amount) =>
+        F("ancient.nonupeipe.gold",
+            "Nonupeipe promises everyone {0} once this fight is won. She is good for it.",
+            ModLocalization.Gold(amount));
+
+    public static string NonupeipeMarkedRoom() =>
+        L("ancient.nonupeipe.marked_room",
+            "Nonupeipe marks a fight further up the map. Something there will be waiting on its last point of health.");
+
+    public static string NonupeipeNoRoomLeft() =>
+        L("ancient.nonupeipe.no_room",
+            "Nonupeipe looks up the map for somewhere to leave her mark, and finds nothing ahead of you worth marking.");
+
+    public static string MarkedRoomTrigger(string monsterName) =>
+        F("ancient.nonupeipe.marked_trigger",
+            "Nonupeipe got here first. {0} is down to 1 HP before you have thrown anything.", monsterName);
+
+    public static string TanxWeapon(string cardName) =>
+        F("ancient.tanx.weapon",
+            "Tanx throws you {0}. Free this turn, and gone at the end of it.", cardName);
+
+    public static string TezcataraEmber(string relicName) =>
+        F("ancient.tezcatara.ember",
+            "Tezcatara presses {0} into your hands, still soft. It works until this fight ends, and then it does not.",
+            relicName);
+
+    public static string PaelPromise(int energy, int cards) =>
+        F("ancient.pael.promise", "Pael promises you {0} energy and {1} card(s), next turn.",
+            energy, cards);
+
+    public static string PaelTrigger(int energy, int cards) =>
+        F("ancient.pael.trigger", "Pael keeps its word: {0} energy and {1} card(s).", energy, cards);
+
+    public static string OrobasGift(string cardName) =>
+        F("ancient.orobas.gift",
+            "Orobas hands over {0} from another discipline entirely. Free this turn, and gone at the end of it.",
+            cardName);
+
+    public static string DialogYield() => L("dialog.yield", "Let go");
+
+    public static string DialogKeepControl() => L("dialog.keep_control", "Keep my hand");
+
+    public static string DialogTakeTheDeal() => L("dialog.take_deal", "Deal");
+
+    public static string DialogWalkAway() => L("dialog.walk_away", "Walk away");
+
+    // Co-op only.
+
+    public static string VinesCaught(string victimName, string vinesName, int escapeTurns) =>
+        F("coop.vines.caught",
+            "{1} has {0} by the arms — they cannot play a card until it is cut down, and it will only take one hit. Potions still work, and the vines lose interest after {2}.",
+            victimName, vinesName, ModLocalization.Turns(escapeTurns));
+
+    public static string VinesCut(string victimName) =>
+        F("coop.vines.cut", "The vines come apart. {0} has their hands back.", victimName);
+
+    public static string VinesWithered(string victimName) =>
+        F("coop.vines.withered", "The vines lose their grip on their own. {0} is free.", victimName);
+
+    // Summon events. Every one of these names the monster, because "something joins the fight" is not
+    // a decision and "a Bowlbug joins the fight" is.
+
+    public static string FreeSummon(string monsterName, bool joinsPlayer) => joinsPlayer
+        ? F("summon.free.ally", "{0} wanders in and takes your side.", monsterName)
+        : F("summon.free.enemy", "{0} wanders in and sides against you.", monsterName);
+
+    public static string SummonLeft(string monsterName, bool wasAlly) => wasAlly
+        ? F("summon.left.ally", "{0} loses interest and wanders off. You are on your own again.", monsterName)
+        : F("summon.left.enemy", "{0} loses interest and wanders off.", monsterName);
+
+    public static string MercenaryOffer(string monsterName, int price) =>
+        F("summon.mercenary.offer",
+            "{0} offers to fight for you, for {1} gold. It wants paying next turn.", monsterName, price);
+
+    public static string MercenaryTooExpensive(string monsterName, int price) =>
+        F("summon.mercenary.too_expensive",
+            "{0} sizes up your purse, quotes {1} gold, and moves on when it sees you cannot cover it.",
+            monsterName, price);
+
+    public static string MercenaryDeclined(string monsterName) =>
+        F("summon.mercenary.declined", "You wave {0} off. It shrugs and leaves.", monsterName);
+
+    public static string MercenaryAccepted(string monsterName, int price) =>
+        F("summon.mercenary.accepted",
+            "You shake on it with {0}. {1} gold changes hands next turn.", monsterName, price);
+
+    public static string MercenaryHelps(string monsterName, int price) =>
+        F("summon.mercenary.helps", "You pay {1} gold and {0} joins your side.", monsterName, price);
+
+    public static string MercenaryRanOff(string monsterName, int price) =>
+        F("summon.mercenary.ran_off",
+            "You pay {1} gold and {0} is already gone. Nothing you can do about it.", monsterName, price);
+
+    public static string MercenaryBetrayed(string monsterName, int price) =>
+        F("summon.mercenary.betrayed",
+            "You pay {1} gold and {0} decides anyone carrying that much is worth robbing. It joins the enemy.",
+            monsterName, price);
+
+    public static string RecruitOffer(string monsterName, int standDownPrice, int hirePrice) =>
+        F("summon.recruit.offer",
+            "{0} is about to join the enemy. Gold can talk it down for {1}, or bring it over for {2}.",
+            monsterName, standDownPrice, hirePrice);
+
+    public static string RecruitFollowUp(string monsterName, int standDownPrice, int hirePrice) =>
+        F("summon.recruit.follow_up",
+            "How much is {0} worth to you? Standing down costs {1}. Fighting for you costs {2}.",
+            monsterName, standDownPrice, hirePrice);
+
+    public static string RecruitStoodDown(string monsterName, int price) =>
+        F("summon.recruit.stood_down", "{1} gold, and {0} stays out of it.", monsterName, price);
+
+    public static string RecruitRanOff(string monsterName, int price) =>
+        F("summon.recruit.ran_off", "{1} gold, and {0} takes it and vanishes.", monsterName, price);
+
+    public static string RecruitHelps(string monsterName, int price) =>
+        F("summon.recruit.helps", "{1} gold, and {0} turns around to fight for you.", monsterName, price);
+
+    public static string RecruitJoinedEnemies(string monsterName, int price) =>
+        F("summon.recruit.joined_enemies", "{0} joins the enemy side anyway.", monsterName, price);
+
+    public static string ChallengeOffer(string monsterName, bool isElite) => isElite
+        ? F("summon.challenge.offer_elite",
+            "{0} wants in on this fight. It looks like it can take one. Beating it pays.", monsterName)
+        : F("summon.challenge.offer", "{0} wants in on this fight. Beating it pays.", monsterName);
+
+    public static string ChallengeAccepted(string monsterName) =>
+        F("summon.challenge.accepted", "You wave {0} in. It joins the enemy side.", monsterName);
+
+    public static string ChallengeFled(string monsterName) =>
+        F("summon.challenge.fled",
+            "You wave {0} in and it thinks better of it, dropping what it was carrying as it goes.",
+            monsterName);
+
+    public static string ChallengeLeft(string monsterName) =>
+        F("summon.challenge.left", "You turn {0} away. It says its piece and goes.", monsterName);
+
+    public static string ChallengeForcedItself(string monsterName) =>
+        F("summon.challenge.forced", "You turn {0} away. It joins anyway.", monsterName);
+
+    public static string DialogHire(int price) => F("dialog.hire", "Pay {0}", price);
+
+    public static string DialogDecline() => L("dialog.decline", "No thanks");
+
+    public static string DialogNegotiate() => L("dialog.negotiate", "Talk to it");
+
+    public static string DialogIgnore() => L("dialog.ignore", "Ignore it");
+
+    public static string DialogStandDown(int price) => F("dialog.stand_down", "Stand down ({0})", price);
+
+    public static string DialogRecruit(int price) => F("dialog.recruit", "Fight for me ({0})", price);
+
+    public static string DialogAccept() => L("dialog.accept", "Bring it on");
+
+    public static string DialogRefuse() => L("dialog.refuse", "Not now");
 
     private static string PowerName<T>() where T : PowerModel =>
         ModelDb.Power<T>().Title.GetFormattedText();

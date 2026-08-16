@@ -8,13 +8,20 @@ An early-alpha mod for the Slay the Spire 2 Early Access `public-beta` branch. I
 - Standard mode checks every 3–5 turns; each checkpoint has a 50% chance to contain an incident.
 - Advance warnings show the exact target, damage, and effect. They have no countdown bar and can be closed with a dedicated × button.
 - Direct damage resolves at turn end and can be Blocked.
-- Nine incidents are included: Rockfall, Sword Rain, Toxic Fog, Gentle Rain, Neow's Blessing, the Architect's Curse, Vine Snare, Damp Sea Wind, and Hive Onslaught.
+- Twenty-five kinds of incident, with over sixty distinct outcomes:
+  - **Hazard** — Rockfall, Sword Rain, Hive Onslaught, Laser.
+  - **Debuff** — Toxic Fog, Vine Snare, Damp Sea Wind, the Architect's Curse.
+  - **Aid** — Gentle Rain, Neow's Blessing, the Last Miracle.
+  - **Encounter** — a wandering monster picks a side, a mercenary sells its help, an enemy recruit can be bought off or bought over, and a challenger pays out if you take the fight. Extra monsters raise the spoils.
+  - **The Ancients** — one event for each of the seven shrines that are not Neow: Vakuu plays your next hand and burns it, Darv fills your hand and scrambles the prices after it, Nonupeipe leaves max HP or gold or a marked room, Tanx lends a weapon for the turn, Tezcatara lends a relic cast in wax, Pael pays energy and a card, and Orobas offers cards from a discipline that is not yours.
+  - **Co-op** — Strangling Vines pins one player until an ally cuts them loose.
 - The blessing and the curse are also rolled once on turn 1, at 33% each. That roll cannot be telegraphed, so it is labelled a Combat Start event and can be switched off on its own.
+- The Last Miracle is a standing rule rather than a stop on the route. Each unit rolls for it when combat begins, and a unit holding one survives its first lethal blow at 1 HP. Both sides can hold one, and both are announced on screen for as long as the charge lasts, so a killing blow that fails to land is never a surprise. Later hits of the same attack still go through.
 - Nothing is scheduled early enough to land before its own warning could be shown, so turn 1 never carries a route incident.
 - A "Combat Events" entry on the main menu opens the settings page directly, alongside presets, schedule controls, combat types, incident toggles, weights, and effect values.
 - Full in-game localization is included for English, Simplified Chinese, and Traditional Chinese. Other locales fall back to English.
 
-The current alpha is designed and tested for single-player. Multiplayer is not supported yet.
+Co-op support arrived in `0.4.0-alpha.1`: the whole table shares one route, shared decisions are settled by majority vote with the tie broken by the combat seed, priced offers are split rather than billed to whoever clicked, and effects land on every seat rather than on whichever player the game handed the hook to first. **It has not yet been tested against a real lobby — treat it as experimental and please report what breaks.**
 
 ## Requirements
 

@@ -20,11 +20,12 @@ public partial class MainFile : Node
         {
             Settings.SettingsBootstrap.Register();
             Runtime.IncidentDirector.Register();
+            Runtime.SpoilsCourier.Register();
 
             var harmony = new Harmony(ModId);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
             Runtime.RitsuToastCloseButtonPatch.TryApply(harmony);
-            Logger.Info("Random Combat Events 0.2.0-alpha.1 initialized.");
+            Logger.Info("Random Combat Events 0.4.0-alpha.1 initialized.");
         }
         catch (Exception exception)
         {

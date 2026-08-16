@@ -38,10 +38,29 @@ internal static class BoonExecutor
             return null;
 
         if (chosen.Payload == BoonPayload.Card)
-            return await GiveCard(chosen, combatState, player);
+            return await GiveCardToEveryone(chosen, combatState, player);
 
         await ApplyPower(chosen, choiceContext, combatState);
         return chosen;
+    }
+
+    /// <summary>
+    ///     Deals the same card to every seat. The powers already land on the whole player side, and a
+    ///     blessing that only reached whichever player the game happened to ask first would turn a shared
+    ///     route into a lottery about turn order.
+    /// </summary>
+    private static async Task<BoonOption?> GiveCardToEveryone(
+        BoonOption option,
+        CombatState combatState,
+        Player asked)
+    {
+        BoonOption? given = null;
+        foreach (var player in Party.Members(combatState))
+            given = await GiveCard(option, combatState, player) ?? given;
+
+        // Falling back to the one player we were handed keeps single-player behaviour identical even if
+        // the roster came back empty for a reason we have not thought of.
+        return given ?? await GiveCard(option, combatState, asked);
     }
 
     /// <summary>
