@@ -275,6 +275,26 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
     }
 
     /// <summary>
+    ///     Combat hooks cover the victory path, but the manager also raises this signal when a player
+    ///     dies or the fight is abandoned.  Close the UI state there too; a lost fight must never carry
+    ///     its pending notices or summon spoils into the next room.
+    /// </summary>
+    internal static void OnCombatEnded(CombatRoom room)
+    {
+        try
+        {
+            if (!CombatStates.ContainsKey(room.CombatState))
+                return;
+
+            CleanUpCombat(room, carrySpoils: false);
+        }
+        catch (Exception exception)
+        {
+            ReportHookFailure(nameof(OnCombatEnded), exception);
+        }
+    }
+
+    /// <summary>
     ///     The vines hold one player's cards down. Routed through the game's own play gate so the cards
     ///     read as unplayable on screen instead of simply refusing to work when clicked.
     /// </summary>
@@ -370,7 +390,7 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
     private static void ReportHookFailure(string hook, Exception exception) =>
         MainFile.Logger.Error($"{hook} failed; skipping this combat event. {exception}");
 
-    private static void CleanUpCombat(CombatRoom room)
+    private static void CleanUpCombat(CombatRoom room, bool carrySpoils = true)
     {
         if (CombatStates.TryGetValue(room.CombatState, out var runtime))
         {
@@ -401,9 +421,18 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
             runtime.Deferrals.Clear();
             runtime.Vines?.Notice?.Close(immediate: true);
             runtime.Vines = null;
-            _carriedNormalSpoils = runtime.ExtraNormalMonsters;
-            _carriedEliteSpoils = runtime.ExtraEliteMonsters;
-            _carriedSpoilSeed = runtime.Timeline.Seed;
+            if (carrySpoils)
+            {
+                _carriedNormalSpoils = runtime.ExtraNormalMonsters;
+                _carriedEliteSpoils = runtime.ExtraEliteMonsters;
+                _carriedSpoilSeed = runtime.Timeline.Seed;
+            }
+            else
+            {
+                _carriedNormalSpoils = 0;
+                _carriedEliteSpoils = 0;
+                _carriedSpoilSeed = 0;
+            }
         }
 
         CombatStates.Remove(room.CombatState);

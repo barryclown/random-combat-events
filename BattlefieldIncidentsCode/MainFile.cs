@@ -1,6 +1,7 @@
 using System.Reflection;
 using Godot;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Modding;
 
 namespace BattlefieldIncidents;
@@ -21,6 +22,10 @@ public partial class MainFile : Node
             Settings.SettingsBootstrap.Register();
             Runtime.IncidentDirector.Register();
             Runtime.SpoilsCourier.Register();
+            // Hook the manager-level end signal as well as the normal combat hook.  The latter only
+            // runs on a won fight; the manager signal also fires when the player dies or abandons a
+            // combat, which is where persistent notices would otherwise leak into the result screen.
+            CombatManager.Instance.CombatEnded += Runtime.IncidentDirector.OnCombatEnded;
 
             var harmony = new Harmony(ModId);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
