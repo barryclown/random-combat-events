@@ -17,10 +17,11 @@ public enum IncidentPreset
 public sealed class IncidentSettings
 {
     public bool Enabled { get; set; } = true;
-    public IncidentPreset Preset { get; set; } = IncidentPreset.Standard;
-    public int MinimumCheckpointGap { get; set; } = 3;
-    public int MaximumCheckpointGap { get; set; } = 5;
-    public int IncidentChancePercent { get; set; } = 50;
+    // New installs start with the faster Chaos preset; players can switch to a calmer mode in settings.
+    public IncidentPreset Preset { get; set; } = IncidentPreset.Chaos;
+    public int MinimumCheckpointGap { get; set; } = 1;
+    public int MaximumCheckpointGap { get; set; } = 3;
+    public int IncidentChancePercent { get; set; } = 80;
     public int MaximumScheduledTurn { get; set; } = 100;
     public int WarningTurns { get; set; } = 1;
     public bool AllowOverlap { get; set; } = true;
