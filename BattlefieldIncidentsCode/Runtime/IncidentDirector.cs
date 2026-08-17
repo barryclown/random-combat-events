@@ -177,10 +177,16 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
                 if (!pending.TryConsume(side))
                     continue;
 
-                // The armed notice already explains that both sides will be hit.  Do not add another
-                // toast for each side here: Sword Rain, Laser, and Hive Onslaught resolve once per side,
-                // so showing a side-specific impact notice made one event look like it fired twice even
-                // though TryConsume correctly prevented duplicate damage on the same side.
+                // These events resolve once per side, but only the player side needs a result toast. The
+                // enemy-side hit still happens; it simply does not create a second message that makes
+                // one event look like it fired twice. TryConsume continues to guard the effect itself.
+                if (side == CombatSide.Player)
+                {
+                    TrackRoundNotice(runtime, round,
+                        IncidentText.SideDamageImpact(pending, side),
+                        IncidentText.IncidentTitle(pending.Kind),
+                        IncidentText.Icon(pending.Kind));
+                }
                 await DamageSide(choiceContext, combatState, side, pending.Damage, pending.Hits,
                     pending.DamagePercent);
 
