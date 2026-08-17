@@ -196,7 +196,8 @@ public sealed class IncidentSettings
     // Combat-start boons roll once per combat, independently of the turn route above.
     public bool EnableCombatStartBoons { get; set; } = true;
     public int CombatStartBlessingPercent { get; set; } = 33;
-    public int CombatStartCursePercent { get; set; } = 33;
+    // Standard is the default preset, so a fresh Workshop install opens on a gift-or-nothing roll.
+    public int CombatStartCursePercent { get; set; } = 0;
     public bool EnableCombatStartNormalCombats { get; set; } = true;
     public bool EnableCombatStartEliteCombats { get; set; } = true;
     public bool EnableCombatStartBossCombats { get; set; } = true;
