@@ -138,22 +138,22 @@ public sealed class IncidentSettings
     /// </summary>
     public int MultiplayerPriceDivisor { get; set; } = 4;
 
-    // Summon events bring another monster into the fight. Prices follow the shop's potion ladder
-    // (50/75/100) halved, because a fight is not a shop and the offer has to stay impulse-priced.
+    // Summon events bring another monster into the fight. The existing summon prices are halved again
+    // at the user's request; the odd 25-gold tier rounds to 13 because gold is an integer.
     public bool EnableFreeSummon { get; set; } = true;
     public int FreeSummonWeight { get; set; } = 5;
     public int FreeSummonAllyPercent { get; set; } = 50;
 
     public bool EnableMercenary { get; set; } = true;
     public int MercenaryWeight { get; set; } = 5;
-    public int MercenaryPrice { get; set; } = 25;
+    public int MercenaryPrice { get; set; } = 13;
     public int MercenaryRunOffPercent { get; set; } = 5;
     public int MercenaryBetrayalPercent { get; set; } = 5;
 
     public bool EnableEnemyRecruit { get; set; } = true;
     public int EnemyRecruitWeight { get; set; } = 5;
-    public int StandDownPrice { get; set; } = 38;
-    public int HirePrice { get; set; } = 50;
+    public int StandDownPrice { get; set; } = 19;
+    public int HirePrice { get; set; } = 25;
     public int RecruitFailurePercent { get; set; } = 5;
 
     public bool EnableChallenge { get; set; } = true;
