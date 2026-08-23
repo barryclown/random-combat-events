@@ -1,0 +1,121 @@
+<#
+.SYNOPSIS
+    Builds, stages, and uploads this mod to the Steam Workshop in one go.
+
+.DESCRIPTION
+    The upload itself was never the part that got forgotten. What got forgotten, every single
+    time, is that re-uploading clears the item's "known game version" association on the Workshop
+    page, and the uploader says nothing about it. So that step is not a note in someone's head any
+    more: this script refuses to call itself finished until it has printed the instruction and
+    opened the changelog page.
+
+.EXAMPLE
+    .\Publish.ps1 -ChangeNote "0.4.1: what changed"
+
+.EXAMPLE
+    .\Publish.ps1 -ChangeNote "..." -SkipBuild
+#>
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory = $true)]
+    [string]$ChangeNote,
+
+    [ValidateSet('private', 'public', 'unlisted', 'friends_only')]
+    [string]$Visibility,
+
+    [switch]$SkipBuild,
+
+    [switch]$SkipTests,
+
+    # Skip opening the changelog page. The reminder is still printed; it cannot be switched off.
+    [switch]$NoBrowser
+)
+
+$ErrorActionPreference = 'Stop'
+
+$workshopDir = $PSScriptRoot
+$projectDir = Split-Path -Parent $workshopDir
+$testsDir = Join-Path (Split-Path -Parent $projectDir) 'BattlefieldIncidents.Tests'
+$uploader = Join-Path (Split-Path -Parent $projectDir) 'tools\sts2-mod-uploader\publish\win-x64\ModUploader.exe'
+$modId = (Get-Content -Raw -LiteralPath (Join-Path $workshopDir 'mod_id.txt')).Trim()
+$manifestPath = Join-Path $projectDir 'BattlefieldIncidents.json'
+$version = (Get-Content -Raw -Encoding UTF8 -LiteralPath $manifestPath | ConvertFrom-Json).version
+
+Write-Host "Publishing BattlefieldIncidents $version to Workshop item $modId" -ForegroundColor Cyan
+
+# --- The version string lives in three places; a mismatch ships a lie in the store footer. --------
+$mainFile = Join-Path $projectDir 'BattlefieldIncidentsCode\MainFile.cs'
+$description = Join-Path $workshopDir 'description.bbcode'
+$mismatched = @()
+if ((Get-Content -Raw -Encoding UTF8 -LiteralPath $mainFile) -notmatch [regex]::Escape("Random Combat Events $version initialized")) {
+    $mismatched += 'BattlefieldIncidentsCode\MainFile.cs'
+}
+if ((Get-Content -Raw -Encoding UTF8 -LiteralPath $description) -notmatch [regex]::Escape("[b]v$version[/b]")) {
+    $mismatched += 'workshop\description.bbcode'
+}
+if ($mismatched.Count -gt 0) {
+    throw "Version $version from BattlefieldIncidents.json is not reflected in: $($mismatched -join ', ')"
+}
+
+if (-not $SkipBuild) {
+    Write-Host "`n[1/5] dotnet build -c Release" -ForegroundColor Cyan
+    dotnet build $projectDir -c Release --nologo
+    if ($LASTEXITCODE -ne 0) { throw "Build failed with exit code $LASTEXITCODE." }
+}
+
+if (-not $SkipTests) {
+    Write-Host "`n[2/5] tests" -ForegroundColor Cyan
+    dotnet run --project $testsDir -c Release --nologo
+    if ($LASTEXITCODE -ne 0) { throw "Tests failed with exit code $LASTEXITCODE." }
+}
+
+Write-Host "`n[3/5] staging workshop/content" -ForegroundColor Cyan
+$builtDll = Join-Path $projectDir '.godot\mono\temp\bin\Release\BattlefieldIncidents.dll'
+if (-not (Test-Path -LiteralPath $builtDll)) { throw "Built assembly not found at $builtDll." }
+Copy-Item -LiteralPath $builtDll -Destination (Join-Path $workshopDir 'content\BattlefieldIncidents.dll') -Force
+Copy-Item -LiteralPath $manifestPath -Destination (Join-Path $workshopDir 'content\BattlefieldIncidents.json') -Force
+
+Write-Host "`n[4/5] syncing workshop.json" -ForegroundColor Cyan
+$syncArgs = @{ ChangeNote = $ChangeNote }
+if ($PSBoundParameters.ContainsKey('Visibility')) { $syncArgs['Visibility'] = $Visibility }
+& (Join-Path $workshopDir 'Sync-WorkshopManifest.ps1') @syncArgs
+
+Write-Host "`n[5/5] uploading" -ForegroundColor Cyan
+& $uploader upload -w $workshopDir -i $modId
+if ($LASTEXITCODE -ne 0) { throw "Upload failed with exit code $LASTEXITCODE." }
+
+# --- Confirm Steam actually has it, rather than trusting the uploader's last line. ----------------
+Start-Sleep -Seconds 3
+try {
+    $details = (Invoke-RestMethod -Uri 'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/' `
+        -Method Post -Body @{ itemcount = 1; 'publishedfileids[0]' = $modId }).response.publishedfiledetails[0]
+    $updated = [DateTimeOffset]::FromUnixTimeSeconds($details.time_updated).ToLocalTime()
+    Write-Host "`nSteam reports: result=$($details.result) visibility=$($details.visibility) banned=$($details.banned) size=$($details.file_size) updated=$updated"
+    if ($details.visibility -ne 0) {
+        Write-Warning 'The item is not public. Editing the description can put it back through review; check the item page.'
+    }
+} catch {
+    Write-Warning "Could not read the item back from Steam: $_"
+}
+
+$changelogUrl = "https://steamcommunity.com/sharedfiles/filedetails/changelog/$modId"
+
+Write-Host ''
+Write-Host '================================================================' -ForegroundColor Yellow
+Write-Host ' NOT DONE YET: re-uploading cleared the game version association.' -ForegroundColor Yellow
+Write-Host '================================================================' -ForegroundColor Yellow
+Write-Host ''
+Write-Host "  1. Open $changelogUrl"
+Write-Host '  2. On the newest entry, click the game-version link on the right.'
+Write-Host '  3. Earliest = public-beta. Latest = Any.'
+Write-Host '  4. The dropdowns ignore values set from JavaScript. Click one, then'
+Write-Host '     press Down/Enter. Enter also submits the dialog. Never press Escape.'
+Write-Host '  5. Done when the entry reads "public-beta and newer" under the date.'
+Write-Host ''
+Write-Host 'This has to be redone after EVERY upload; workshop.json minBranch/maxBranch'
+Write-Host 'must stay null (setting them makes the upload commit time out).'
+Write-Host ''
+
+if (-not $NoBrowser) {
+    Start-Process $changelogUrl
+}

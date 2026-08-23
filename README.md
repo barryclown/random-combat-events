@@ -39,6 +39,15 @@ dotnet build -c Release
 
 The Release build copies the DLL and manifest into the game's local `mods/BattlefieldIncidents` folder for testing.
 
+To publish, use `workshop/Publish.ps1` rather than calling the uploader directly. It builds, runs the
+tests, stages `workshop/content`, syncs the manifest, uploads, reads the item back from Steam, and
+then walks you through re-setting the item's known-game-version association — which every upload
+silently clears.
+
+```powershell
+.\workshop\Publish.ps1 -ChangeNote "0.4.1: what changed"
+```
+
 ## Ideas and contributions
 
 If you have ideas for the mod or are interested in contributing, feel free to contact Barry through [Steam](https://steamcommunity.com/profiles/76561198420391746) or open a [GitHub issue](https://github.com/barryclown/random-combat-events/issues).
