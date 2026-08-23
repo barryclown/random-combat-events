@@ -45,6 +45,14 @@ internal sealed class CombatIncidentState
     /// <summary>The turn each summon arrived, so it is never asked to leave on the turn it showed up.</summary>
     public Dictionary<Creature, int> SummonArrivals { get; } = new(ReferenceEqualityComparer.Instance);
 
+    /// <summary>
+    ///     Which event brought each summon in, and whether gold changed hands for it. A monster that
+    ///     wanders off has to be announced under the event that produced it: a paid mercenary walking out
+    ///     on its contract, filed under "Wandering Monster", reads as some unrelated thing happening.
+    /// </summary>
+    public Dictionary<Creature, SummonOrigin> SummonOrigins { get; } =
+        new(ReferenceEqualityComparer.Instance);
+
     /// <summary>Contracts agreed on one turn and paid for on the next, keyed by the turn they settle.</summary>
     public Dictionary<int, PendingMercenary> PendingMercenaries { get; } = [];
 
@@ -115,6 +123,30 @@ internal sealed class StranglingVinesState
     public bool Released { get; set; }
 }
 
+/// <summary>Where a summoned monster came from, and whether the player paid to get it there.</summary>
+internal readonly record struct SummonOrigin(IncidentKind Kind, bool Paid);
+
+/// <summary>Which part of the field a blast of incident damage was aimed at.</summary>
+internal enum DamageScope
+{
+    Players,
+    Enemies,
+    Everyone,
+}
+
+/// <summary>
+///     What one blast of incident damage actually did, counted from the game's own damage results
+///     rather than from what the mod intended. This is the only honest way to tell the player whether
+///     the enemy half of a two-sided event landed, since it resolves off-screen during the enemy turn.
+/// </summary>
+internal readonly record struct DamageTally(int Targets, int Unblocked, int Blocked)
+{
+    public DamageTally Add(DamageResult result) => new(
+        Targets + 1,
+        Unblocked + Math.Max(0, result.UnblockedDamage),
+        Blocked + Math.Max(0, result.BlockedDamage));
+}
+
 internal readonly record struct PendingSideDamageKey(int SourceTurn, int Round, IncidentKind Kind);
 
 internal sealed class PendingSideDamage
@@ -127,12 +159,10 @@ internal sealed class PendingSideDamage
     /// <summary>
     ///     When above zero the hit is a share of each unit's own max HP instead of the flat
     ///     <see cref="Damage" />, so one number cannot be a scratch on a Boss and a death sentence on a
-    ///     minion. <see cref="PlayerDamage" /> is what that works out to for the local player, snapshot
-    ///     when the event is armed so the notice and the hit can never disagree.
+    ///     minion. What it works out to per unit is counted from the damage results afterwards rather
+    ///     than guessed here, so the notice and the hit can never disagree.
     /// </summary>
     public int DamagePercent { get; init; }
-
-    public decimal PlayerDamage { get; init; }
 
     public required int Hits { get; init; }
     public required int Wave { get; init; }

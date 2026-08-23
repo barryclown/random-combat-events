@@ -106,7 +106,7 @@ internal static class IncidentText
     {
         IncidentKind.Rockfall =>
             F("incident.warning.rockfall",
-                "In {0}, falling rocks will deal {1} damage to all players at the end of the player side's turn. Block can prevent it.",
+                "In {0}, falling rocks will deal {1} damage to every unit at the end of the player side's turn. Block can prevent it.",
                 ModLocalization.Turns(turnsRemaining), settings.RockfallDamage),
         IncidentKind.SwordRain =>
             F("incident.warning.sword_rain",
@@ -200,7 +200,7 @@ internal static class IncidentText
     {
         IncidentKind.Rockfall =>
             F("incident.trigger.rockfall",
-                "The boulders are coming loose! At the end of this turn, all players will take {0} damage. Block can prevent it.",
+                "The boulders are coming loose! At the end of this turn, every unit will take {0} damage. Block can prevent it.",
                 settings.RockfallDamage),
         IncidentKind.SwordRain =>
             F("incident.trigger.sword_rain",
@@ -236,36 +236,48 @@ internal static class IncidentText
             "Hive wave {0}/{1} approaches! Both sides will take {2} damage at the end of their own side's turn. Block can prevent it.",
             wave, checkpoint.Duration, settings.HiveOnslaughtDamage);
 
-    public static string RockfallImpact(decimal damage) =>
-        F("incident.impact.rockfall",
-            "The boulders fall! All players are about to take {0} damage. Block can prevent it.", damage);
+    /// <summary>Names one wave of the Hive, so a three-turn event does not post the same line thrice.</summary>
+    public static string HiveWaveLabel(int wave, int duration) =>
+        F("incident.label.hive_wave", "Hive Onslaught · wave {0}/{1}", wave, duration);
 
-    public static string SideDamageImpact(PendingSideDamage pending, CombatSide side)
+    /// <summary>
+    ///     What a blast of incident damage actually did, written after it landed rather than before.
+    ///     <para>
+    ///     These events resolve once per side, and the side that is not yours resolves in the middle of
+    ///     the enemy turn where nothing on screen accounts for it. A prediction cannot say whether the
+    ///     enemies were really hit, or for how much, and a percentage of "its own max HP" is not a number
+    ///     anybody can check by eye. So the numbers here are counted from the damage results.
+    ///     </para>
+    /// </summary>
+    public static string DamageResult(string label, DamageScope scope, DamageTally tally)
     {
-        var targets = side == CombatSide.Player
-            ? L("incident.target.players", "all players")
-            : L("incident.target.enemies", "all enemies");
-        return pending.Kind switch
+        if (tally.Targets <= 0)
+            return F("incident.result.nothing", "{0} finds nothing left to hit.", label);
+
+        var units = ModLocalization.Units(tally.Targets);
+        return (scope, tally.Blocked > 0) switch
         {
-            IncidentKind.SwordRain =>
-                F("incident.impact.sword_rain",
-                    "Sword Rain falls! {0} are about to take {1} damage × {2}. Block can prevent it.",
-                    targets, pending.Damage, pending.Hits),
-            IncidentKind.Laser when side == CombatSide.Player =>
-                F("incident.impact.laser_player",
-                    "The laser fires! All players are about to take {0}, which is {1}% of max HP. Block can prevent it.",
-                    pending.PlayerDamage, pending.DamagePercent),
-            IncidentKind.Laser =>
-                F("incident.impact.laser_enemies",
-                    "The laser fires! {0} are about to take {1}% of their own max HP each.",
-                    targets, pending.DamagePercent),
-            IncidentKind.HiveOnslaught =>
-                F("incident.impact.hive_onslaught",
-                    "Hive wave {1}/{2} strikes! {0} are about to take {3} damage. Block can prevent it.",
-                    targets, pending.Wave, pending.Duration, pending.Damage),
-            _ => F("incident.impact.default",
-                "{0} are about to take {1} damage × {2}. Block can prevent it.",
-                targets, pending.Damage, pending.Hits),
+            (DamageScope.Players, false) =>
+                F("incident.result.players", "{0} lands on your side: {1} lost {2} HP in total.",
+                    label, units, tally.Unblocked),
+            (DamageScope.Players, true) =>
+                F("incident.result.players_blocked",
+                    "{0} lands on your side: {1} lost {2} HP in total, and {3} more was blocked.",
+                    label, units, tally.Unblocked, tally.Blocked),
+            (DamageScope.Enemies, false) =>
+                F("incident.result.enemies", "{0} lands on the enemy side: {1} lost {2} HP in total.",
+                    label, units, tally.Unblocked),
+            (DamageScope.Enemies, true) =>
+                F("incident.result.enemies_blocked",
+                    "{0} lands on the enemy side: {1} lost {2} HP in total, and {3} more was blocked.",
+                    label, units, tally.Unblocked, tally.Blocked),
+            (_, false) =>
+                F("incident.result.everyone", "{0} lands on the whole room: {1} lost {2} HP in total.",
+                    label, units, tally.Unblocked),
+            _ =>
+                F("incident.result.everyone_blocked",
+                    "{0} lands on the whole room: {1} lost {2} HP in total, and {3} more was blocked.",
+                    label, units, tally.Unblocked, tally.Blocked),
         };
     }
 
@@ -283,33 +295,8 @@ internal static class IncidentText
     public static string OmenTitle(int turn) =>
         F("toast.title.omen", "Event Omen · Turn {0}", turn);
 
-    public static Texture2D Icon(IncidentKind kind) => kind switch
-    {
-        IncidentKind.Rockfall => ModelDb.Power<RollingBoulderPower>().Icon,
-        IncidentKind.SwordRain => ModelDb.Power<FanOfKnivesPower>().Icon,
-        IncidentKind.ToxicFog => ModelDb.Power<PoisonPower>().Icon,
-        IncidentKind.VineSnare => ModelDb.Power<VulnerablePower>().Icon,
-        IncidentKind.DampSeaWind => ModelDb.Power<WeakPower>().Icon,
-        IncidentKind.HiveOnslaught => ModelDb.Power<PersonalHivePower>().Icon,
-        IncidentKind.GentleRain => ModelDb.Power<RegenPower>().Icon,
-        IncidentKind.NeowsBlessing => ModelDb.Power<StrengthPower>().Icon,
-        IncidentKind.ArchitectsCurse => ModelDb.Power<FrailPower>().Icon,
-        IncidentKind.Laser => ModelDb.Power<LightningRodPower>().Icon,
-        IncidentKind.FreeSummon => ModelDb.Power<ArtifactPower>().Icon,
-        IncidentKind.Mercenary => ModelDb.Power<GuardedPower>().Icon,
-        IncidentKind.EnemyRecruit => ModelDb.Power<DexterityPower>().Icon,
-        IncidentKind.Challenge => ModelDb.Power<StrengthPower>().Icon,
-        IncidentKind.LastMiracle => ModelDb.Power<BufferPower>().Icon,
-        IncidentKind.VakuusTakeover => ModelDb.Power<FanOfKnivesPower>().Icon,
-        IncidentKind.DarvsGamble => ModelDb.Power<ConfusedPower>().Icon,
-        IncidentKind.NonupeipesGift => ModelDb.Power<RegenPower>().Icon,
-        IncidentKind.TanxsArmory => ModelDb.Power<StrengthPower>().Icon,
-        IncidentKind.TezcatarasEmber => ModelDb.Power<ArtifactPower>().Icon,
-        IncidentKind.PaelsBlessing => ModelDb.Power<DexterityPower>().Icon,
-        IncidentKind.OrobassOffer => ModelDb.Power<BufferPower>().Icon,
-        IncidentKind.StranglingVines => ModelDb.Power<VulnerablePower>().Icon,
-        _ => ModelDb.Power<VulnerablePower>().Icon,
-    };
+    /// <summary>The picture that goes with an incident. Chosen in <see cref="IncidentArt" />.</summary>
+    public static Texture2D Icon(IncidentKind kind) => IncidentArt.Icon(kind);
 
     // The Ancients. Each one names what it actually did, because "a blessing occurred" is not something
     // a player can plan the next turn around.
@@ -411,9 +398,19 @@ internal static class IncidentText
         ? F("summon.free.ally", "{0} wanders in and takes your side.", monsterName)
         : F("summon.free.enemy", "{0} wanders in and sides against you.", monsterName);
 
-    public static string SummonLeft(string monsterName, bool wasAlly) => wasAlly
-        ? F("summon.left.ally", "{0} loses interest and wanders off. You are on your own again.", monsterName)
-        : F("summon.left.enemy", "{0} loses interest and wanders off.", monsterName);
+    public static string SummonLeft(string monsterName, bool wasAlly, bool wasPaidFor)
+    {
+        if (!wasAlly)
+            return F("summon.left.enemy", "{0} loses interest and wanders off.", monsterName);
+
+        // Help that was bought and then walked out is a different event from help that wandered off, and
+        // the difference is the gold that does not come back.
+        return wasPaidFor
+            ? F("summon.left.hired",
+                "{0} decides it has done enough and walks off. What you paid stays paid.", monsterName)
+            : F("summon.left.ally", "{0} loses interest and wanders off. You are on your own again.",
+                monsterName);
+    }
 
     public static string MercenaryOffer(string monsterName, int price) =>
         F("summon.mercenary.offer",
@@ -462,8 +459,12 @@ internal static class IncidentText
     public static string RecruitHelps(string monsterName, int price) =>
         F("summon.recruit.helps", "{1} gold, and {0} turns around to fight for you.", monsterName, price);
 
-    public static string RecruitJoinedEnemies(string monsterName, int price) =>
-        F("summon.recruit.joined_enemies", "{0} joins the enemy side anyway.", monsterName, price);
+    public static string RecruitJoinedEnemies(string monsterName) =>
+        F("summon.recruit.joined_enemies", "{0} joins the enemy side anyway.", monsterName);
+
+    public static string RecruitPaidButJoinedEnemies(string monsterName, int price) =>
+        F("summon.recruit.paid_joined",
+            "{1} gold gone, and {0} joins the enemy side anyway.", monsterName, price);
 
     public static string ChallengeOffer(string monsterName, bool isElite) => isElite
         ? F("summon.challenge.offer_elite",

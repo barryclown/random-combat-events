@@ -46,9 +46,16 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
             return;
 
         _registered = true;
-        ModHelper.SubscribeForCombatStateHooks(MainFile.ModId, combatState =>
+
+        // Deliberately does not build the combat state here. The game calls this delegate on every
+        // single hook dispatch, including the ones that keep coming after the fight is over — victory
+        // hooks, reward hooks — so creating state from here rebuilt it after teardown had already
+        // removed it. That resurrected entry was never cleaned up again, it logged the whole 100-turn
+        // route a second and third time per fight, and the later CombatEnded signal then found it and
+        // ran the "abandoned fight" cleanup, which throws away the extra rewards a summon event earned.
+        // The state is built where it is actually needed: the first player turn of a live fight.
+        ModHelper.SubscribeForCombatStateHooks(MainFile.ModId, _ =>
         {
-            EnsureState(combatState);
             _instance ??= ModelDb.GetById<IncidentDirector>(ModelDb.GetId<IncidentDirector>());
             return [_instance];
         });
@@ -159,11 +166,11 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
                 if (runtime.WarningNotices.Remove(round, out var warningNotice))
                     warningNotice.Close();
 
-                TrackRoundNotice(runtime, round,
-                    IncidentText.RockfallImpact(rockfallDamage),
-                    IncidentText.IncidentTitle(IncidentKind.Rockfall),
-                    IncidentText.Icon(IncidentKind.Rockfall));
-                await DamageEveryone(choiceContext, combatState, rockfallDamage);
+                var rockfallTally = await DamageEveryone(choiceContext, combatState, rockfallDamage);
+                TrackResultNotice(combatState, runtime, round,
+                    IncidentText.DamageResult(
+                        IncidentText.Name(IncidentKind.Rockfall), DamageScope.Everyone, rockfallTally),
+                    IncidentKind.Rockfall);
             }
 
             var pendingForSide = runtime.PendingSideDamages
@@ -177,18 +184,15 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
                 if (!pending.TryConsume(side))
                     continue;
 
-                // These events resolve once per side, but only the player side needs a result toast. The
-                // enemy-side hit still happens; it simply does not create a second message that makes
-                // one event look like it fired twice. TryConsume continues to guard the effect itself.
-                if (side == CombatSide.Player)
-                {
-                    TrackRoundNotice(runtime, round,
-                        IncidentText.SideDamageImpact(pending, side),
-                        IncidentText.IncidentTitle(pending.Kind),
-                        IncidentText.Icon(pending.Kind));
-                }
-                await DamageSide(choiceContext, combatState, side, pending.Damage, pending.Hits,
-                    pending.DamagePercent);
+                // Reported after the fact, with the numbers the damage actually produced. These events
+                // resolve once per side, and the enemy half lands in the middle of the enemy turn where
+                // nothing else on screen accounts for it — a prediction there could not tell the player
+                // whether it connected, which is the one thing they cannot check by eye.
+                var tally = await DamageSide(choiceContext, combatState, side, pending.Damage,
+                    pending.Hits, pending.DamagePercent, pending.Kind);
+                TrackResultNotice(combatState, runtime, round,
+                    IncidentText.DamageResult(SideDamageLabel(pending), Scope(side), tally),
+                    pending.Kind);
 
                 if (pending.IsComplete && runtime.PendingSideDamages.Remove(key))
                     pending.Notice.Close();
@@ -375,6 +379,32 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
         }
     }
 
+    /// <summary>
+    ///     Posts a result notice only if the fight is still going.
+    ///     <para>
+    ///     These lines are written after the damage lands, and that damage can be the blow that ends the
+    ///     combat — at which point teardown has already closed every notice this fight owned. Adding one
+    ///     here anyway would leave a toast about a finished fight sitting over the reward screen with
+    ///     nothing left to close it.
+    ///     </para>
+    /// </summary>
+    private static void TrackResultNotice(
+        CombatState combatState,
+        CombatIncidentState runtime,
+        int round,
+        string body,
+        IncidentKind kind)
+    {
+        if (!CombatStates.TryGetValue(combatState, out var current) || !ReferenceEquals(current, runtime))
+        {
+            MainFile.Logger.Info($"{kind} resolved as the fight ended; skipping its result notice.");
+            return;
+        }
+
+        TrackRoundNotice(runtime, round, body,
+            IncidentText.IncidentTitle(kind), IncidentText.Icon(kind));
+    }
+
     private static void TrackRoundNotice(
         CombatIncidentState runtime,
         int round,
@@ -423,6 +453,7 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
             runtime.Allies.Clear();
             runtime.Summons.Clear();
             runtime.SummonArrivals.Clear();
+            runtime.SummonOrigins.Clear();
             runtime.PendingMercenaries.Clear();
             runtime.Deferrals.Clear();
             runtime.Vines?.Notice?.Close(immediate: true);
@@ -728,8 +759,7 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
                     wave: 1,
                     duration: 1,
                     IncidentText.Trigger(checkpoint, settings, laserDamage),
-                    Math.Clamp(settings.LaserHpPercent, 1, 100),
-                    laserDamage);
+                    Math.Clamp(settings.LaserHpPercent, 1, 100));
                 continue;
             }
 
@@ -918,41 +948,60 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
         }
     }
 
+    /// <summary>Which half of the room a side's damage counts as, for the notice that reports it.</summary>
+    private static DamageScope Scope(CombatSide side) =>
+        side == CombatSide.Player ? DamageScope.Players : DamageScope.Enemies;
+
+    /// <summary>
+    ///     What to call this blast in its result line. The Hive runs for several turns, so its waves are
+    ///     numbered; everything else is simply itself.
+    /// </summary>
+    private static string SideDamageLabel(PendingSideDamage pending) =>
+        pending.Kind == IncidentKind.HiveOnslaught
+            ? IncidentText.HiveWaveLabel(pending.Wave, pending.Duration)
+            : IncidentText.Name(pending.Kind);
+
     /// <summary>
     ///     Rocks fall on the whole room, not on one side of it.
     /// </summary>
-    private static Task<IEnumerable<MegaCrit.Sts2.Core.Entities.Creatures.DamageResult>> DamageEveryone(
+    private static async Task<DamageTally> DamageEveryone(
         PlayerChoiceContext choiceContext,
         CombatState combatState,
-        decimal damage) => CreatureCmd.Damage(
-        choiceContext,
-        HittableCreatures(combatState),
-        damage,
-        ValueProp.Unpowered,
-        null,
-        null,
-        null);
+        decimal damage)
+    {
+        var results = await CreatureCmd.Damage(
+            choiceContext,
+            HittableCreatures(combatState),
+            damage,
+            ValueProp.Unpowered,
+            null,
+            null,
+            null);
+        return Tally(results);
+    }
 
-    private static async Task DamageSide(
+    private static async Task<DamageTally> DamageSide(
         PlayerChoiceContext choiceContext,
         CombatState combatState,
         CombatSide side,
         decimal damage,
         int hits,
-        int damagePercent)
+        int damagePercent,
+        IncidentKind kind)
     {
+        var tally = new DamageTally();
         for (var hit = 0; hit < hits; hit++)
         {
             var targets = combatState.Creatures
                 .Where(creature => creature.Side == side && creature.IsHittable)
                 .ToList();
             if (targets.Count == 0)
-                return;
+                return tally;
 
             if (damagePercent <= 0)
             {
-                await CreatureCmd.Damage(choiceContext, targets, damage, ValueProp.Unpowered,
-                    null, null, null);
+                tally = Tally(await CreatureCmd.Damage(choiceContext, targets, damage,
+                    ValueProp.Unpowered, null, null, null), tally);
                 continue;
             }
 
@@ -960,10 +1009,29 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
             // is re-checked as we go, because an earlier unit dying can take the rest of the row with it.
             foreach (var target in targets.Where(target => target.IsHittable))
             {
-                await CreatureCmd.Damage(choiceContext, [target],
-                    PercentOfMaxHp(target, damagePercent), ValueProp.Unpowered, null, null, null);
+                var share = PercentOfMaxHp(target, damagePercent);
+                // Logged per unit because a share of max HP is the one figure a player cannot verify by
+                // eye, and "is it really charging the enemies their own percentage" is a fair question.
+                MainFile.Logger.Info(
+                    $"{kind} charges {target.Name} ({side}) {damagePercent}% of {target.MaxHp} max HP = {share}.");
+                tally = Tally(
+                    await CreatureCmd.Damage(choiceContext, [target], share, ValueProp.Unpowered,
+                        null, null, null),
+                    tally);
             }
         }
+
+        return tally;
+    }
+
+    private static DamageTally Tally(
+        IEnumerable<MegaCrit.Sts2.Core.Entities.Creatures.DamageResult>? results,
+        DamageTally running = default)
+    {
+        if (results == null)
+            return running;
+
+        return results.Aggregate(running, (current, result) => current.Add(result));
     }
 
     private static async Task HealAllLiving(CombatState combatState, int configuredPercent)
@@ -990,8 +1058,7 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
         int wave,
         int duration,
         string warningText,
-        int damagePercent = 0,
-        decimal playerDamage = 0)
+        int damagePercent = 0)
     {
         var key = new PendingSideDamageKey(source.Turn, round, kind);
         if (runtime.PendingSideDamages.ContainsKey(key))
@@ -1004,7 +1071,6 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
             Round = round,
             Damage = damage,
             DamagePercent = damagePercent,
-            PlayerDamage = playerDamage,
             Hits = Math.Clamp(hits, 1, 10),
             Wave = wave,
             Duration = duration,
@@ -1066,11 +1132,13 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
         IncidentSettings settings,
         int round)
     {
-        foreach (var report in await SummonEvents.ReleaseDepartingAsync(combatState, runtime, settings, round))
+        foreach (var (kind, report) in
+                 await SummonEvents.ReleaseDepartingAsync(combatState, runtime, settings, round))
         {
+            // Filed under the event that brought the monster in. A mercenary walking out on a contract
+            // announced as a "Wandering Monster" reads as an unrelated third thing happening.
             TrackRoundNotice(runtime, round, report,
-                IncidentText.IncidentTitle(IncidentKind.FreeSummon),
-                IncidentText.Icon(IncidentKind.FreeSummon));
+                IncidentText.IncidentTitle(kind), IncidentText.Icon(kind));
         }
     }
 

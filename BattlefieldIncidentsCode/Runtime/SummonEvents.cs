@@ -34,7 +34,7 @@ internal static class SummonEvents
         if (creature == null)
             return null;
 
-        Register(runtime, creature, side, SummonTier.Weak);
+        Register(runtime, creature, side, SummonTier.Weak, IncidentKind.FreeSummon, paid: false);
         return IncidentText.FreeSummon(creature.Name, joinsPlayer);
     }
 
@@ -96,7 +96,7 @@ internal static class SummonEvents
         if (creature == null)
             return IncidentText.MercenaryRanOff(pending.Name, charged);
 
-        Register(runtime, creature, side, SummonTier.Normal);
+        Register(runtime, creature, side, SummonTier.Normal, IncidentKind.Mercenary, paid: charged > 0);
         return outcome == MercenaryOutcome.TurnsHostile
             ? IncidentText.MercenaryBetrayed(creature.Name, charged)
             : IncidentText.MercenaryHelps(creature.Name, charged);
@@ -165,10 +165,17 @@ internal static class SummonEvents
                 if (creature == null)
                     return IncidentText.RecruitRanOff(name, price);
 
-                Register(runtime, creature, side, SummonTier.Normal);
-                return outcome == RecruitOutcome.Helps
-                    ? IncidentText.RecruitHelps(creature.Name, price)
-                    : IncidentText.RecruitJoinedEnemies(creature.Name, price);
+                Register(runtime, creature, side, SummonTier.Normal, IncidentKind.EnemyRecruit,
+                    paid: price > 0);
+                if (outcome == RecruitOutcome.Helps)
+                    return IncidentText.RecruitHelps(creature.Name, price);
+
+                // Two different things end up here: the player never opened their purse, or they paid to
+                // buy this thing off and it took the gold and sided against them anyway. Saying the same
+                // sentence for both hides the entire cost of a failed bribe.
+                return price > 0
+                    ? IncidentText.RecruitPaidButJoinedEnemies(creature.Name, price)
+                    : IncidentText.RecruitJoinedEnemies(creature.Name);
         }
     }
 
@@ -214,7 +221,7 @@ internal static class SummonEvents
                 if (creature == null)
                     return IncidentText.ChallengeLeft(name);
 
-                Register(runtime, creature, CombatSide.Enemy, tier);
+                Register(runtime, creature, CombatSide.Enemy, tier, IncidentKind.Challenge, paid: false);
                 return accepted
                     ? IncidentText.ChallengeAccepted(creature.Name)
                     : IncidentText.ChallengeForcedItself(creature.Name);
@@ -267,13 +274,13 @@ internal static class SummonEvents
     ///     Rolls each standing summon for whether it loses interest and leaves. Nothing that wandered into
     ///     someone else's fight has a reason to see it through, so dying is not the only way out.
     /// </summary>
-    public static async Task<List<string>> ReleaseDepartingAsync(
+    public static async Task<List<(IncidentKind Kind, string Report)>> ReleaseDepartingAsync(
         CombatState combatState,
         CombatIncidentState runtime,
         IncidentSettings settings,
         int round)
     {
-        var reports = new List<string>();
+        var reports = new List<(IncidentKind Kind, string Report)>();
         foreach (var summon in runtime.Summons.ToList())
         {
             if (!summon.IsAlive || !combatState.Creatures.Contains(summon))
@@ -295,9 +302,14 @@ internal static class SummonEvents
 
             var wasAlly = summon.Side == CombatSide.Player;
             var name = summon.Name;
+            // Read before Forget clears it: the notice has to be filed under the event that produced
+            // this monster, not under whichever event happens to be first in the enum.
+            var origin = runtime.SummonOrigins.TryGetValue(summon, out var known)
+                ? known
+                : new SummonOrigin(IncidentKind.FreeSummon, false);
             await CreatureCmd.Escape(summon);
             Forget(runtime, summon);
-            reports.Add(IncidentText.SummonLeft(name, wasAlly));
+            reports.Add((origin.Kind, IncidentText.SummonLeft(name, wasAlly, origin.Paid)));
             MainFile.Logger.Info($"{name} lost interest and left the fight on turn {round}.");
         }
 
@@ -309,16 +321,20 @@ internal static class SummonEvents
         runtime.Summons.Remove(summon);
         runtime.Allies.Remove(summon);
         runtime.SummonArrivals.Remove(summon);
+        runtime.SummonOrigins.Remove(summon);
     }
 
     private static void Register(
         CombatIncidentState runtime,
         Creature creature,
         CombatSide side,
-        SummonTier tier)
+        SummonTier tier,
+        IncidentKind source,
+        bool paid)
     {
         runtime.Summons.Add(creature);
         runtime.SummonArrivals[creature] = creature.CombatState?.RoundNumber ?? 0;
+        runtime.SummonOrigins[creature] = new SummonOrigin(source, paid);
         if (side == CombatSide.Player)
         {
             runtime.Allies.Add(creature);

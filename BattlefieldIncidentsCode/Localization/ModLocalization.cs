@@ -44,6 +44,11 @@ internal static class ModLocalization
         ? Format("format.layer.one", "{0} stack", value)
         : Format("format.layer.other", "{0} stacks", value);
 
+    /// <summary>How many creatures something touched, for the lines that report what an event did.</summary>
+    internal static string Units(int value) => value == 1
+        ? Format("format.unit.one", "{0} unit", value)
+        : Format("format.unit.other", "{0} units", value);
+
     private static CultureInfo ResolveCulture()
     {
         try

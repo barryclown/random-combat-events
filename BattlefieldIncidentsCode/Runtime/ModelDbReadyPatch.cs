@@ -20,6 +20,10 @@ internal static class ModelDbReadyPatch
             // Built now rather than on the first summon: it reads the game's encounter tables, so doing
             // it here proves the exclusion list still lines up with the real data before a fight needs it.
             MonsterPools.Warm();
+
+            // Same reason: the Ancients' portraits and the map's room icons are the game's own files,
+            // so a rename should show up in the log at load rather than as a wrong picture mid-fight.
+            IncidentArt.Warm();
         }
         catch (Exception exception)
         {
