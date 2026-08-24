@@ -133,18 +133,23 @@ $changelogUrl = "https://steamcommunity.com/sharedfiles/filedetails/changelog/$m
 
 Write-Host ''
 Write-Host '================================================================' -ForegroundColor Yellow
-Write-Host ' NOT DONE YET: re-uploading cleared the game version association.' -ForegroundColor Yellow
+Write-Host ' CHECK: the game version association on the newest entry.' -ForegroundColor Yellow
 Write-Host '================================================================' -ForegroundColor Yellow
 Write-Host ''
-Write-Host "  1. Open $changelogUrl"
-Write-Host '  2. On the newest entry, click the game-version link on the right.'
-Write-Host '  3. Earliest = public-beta. Latest = Any.'
-Write-Host '  4. The dropdowns ignore values set from JavaScript. Click one, then'
-Write-Host '     press Down/Enter. Enter also submits the dialog. Never press Escape.'
-Write-Host '  5. Done when the entry reads "public-beta and newer" under the date.'
+Write-Host "  Open $changelogUrl"
+Write-Host '  The newest entry should read "public-beta and newer" under its date.'
 Write-Host ''
-Write-Host 'This has to be redone after EVERY upload; workshop.json minBranch/maxBranch'
-Write-Host 'must stay null (setting them makes the upload commit time out).'
+Write-Host '  If it does not, set it by hand: click the game-version link on the'
+Write-Host '  right of that entry, Earliest = public-beta, Latest = Any. The'
+Write-Host '  dropdowns ignore values set from JavaScript, so click one and press'
+Write-Host '  Down/Enter -- Enter also submits the dialog. Never press Escape.'
+Write-Host ''
+Write-Host '  Background: the uploader used to clear this on every upload, because it'
+Write-Host '  called SetRequiredGameVersions("","") whenever workshop.json omitted'
+Write-Host '  minBranch/maxBranch, and empty means "all versions" rather than "leave'
+Write-Host '  alone". The local uploader is patched to skip that call instead. Do NOT'
+Write-Host '  set minBranch/maxBranch to work around it: calling that API at all makes'
+Write-Host '  SubmitItemUpdate hang until k_EResultTimeout on this app, verified twice.'
 Write-Host ''
 
 if (-not $NoBrowser) {
