@@ -30,7 +30,7 @@ public partial class MainFile : Node
             var harmony = new Harmony(ModId);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
             Runtime.RitsuToastCloseButtonPatch.TryApply(harmony);
-            Logger.Info("Random Combat Events 0.4.0-alpha.2 initialized.");
+            Logger.Info("Random Combat Events 0.4.0-alpha.3 initialized.");
         }
         catch (Exception exception)
         {

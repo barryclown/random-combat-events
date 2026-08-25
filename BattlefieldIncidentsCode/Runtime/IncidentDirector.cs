@@ -913,7 +913,8 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
             case IncidentKind.HiveOnslaught:
                 break;
             case IncidentKind.GentleRain:
-                await HealAllLiving(combatState, settings.GentleRainHealPercent);
+                await HealAllLiving(combatState, settings.GentleRainHealPercent,
+                    settings.GentleRainPlayerMinimumHeal);
                 break;
             case IncidentKind.NeowsBlessing:
             case IncidentKind.ArchitectsCurse:
@@ -1034,17 +1035,31 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
         return results.Aggregate(running, (current, result) => current.Add(result));
     }
 
-    private static async Task HealAllLiving(CombatState combatState, int configuredPercent)
+    /// <summary>
+    ///     The rain falls on everyone, but not evenly.
+    ///     <para>
+    ///     A flat share of max HP quietly favours the enemy side: a room of monsters usually has more
+    ///     total health than the player does, so "3% to every living unit" hands the opposition more
+    ///     than it hands you, and the one event filed under Aid was slightly working against you. The
+    ///     player's share therefore has a floor. Enemies keep the old minimum of a single point.
+    ///     </para>
+    /// </summary>
+    private static async Task HealAllLiving(
+        CombatState combatState,
+        int configuredPercent,
+        int playerMinimum)
     {
         var percent = Math.Clamp(configuredPercent, 1, 100);
+        var floorForPlayers = Math.Max(1, playerMinimum);
         var livingCreatures = combatState.Creatures.Where(creature => creature.IsAlive).ToList();
         foreach (var creature in livingCreatures)
         {
             if (!creature.IsAlive || creature.CurrentHp >= creature.MaxHp)
                 continue;
 
-            var amount = Math.Max(1m, Math.Floor((decimal)creature.MaxHp * percent / 100m));
-            await CreatureCmd.Heal(creature, amount);
+            var share = Math.Floor((decimal)creature.MaxHp * percent / 100m);
+            var minimum = creature.IsPlayer ? floorForPlayers : 1;
+            await CreatureCmd.Heal(creature, Math.Max(minimum, share));
         }
     }
 

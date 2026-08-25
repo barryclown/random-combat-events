@@ -133,23 +133,25 @@ $changelogUrl = "https://steamcommunity.com/sharedfiles/filedetails/changelog/$m
 
 Write-Host ''
 Write-Host '================================================================' -ForegroundColor Yellow
-Write-Host ' CHECK: the game version association on the newest entry.' -ForegroundColor Yellow
+Write-Host ' NOT DONE YET: pin the new changelog entry to a game version.' -ForegroundColor Yellow
 Write-Host '================================================================' -ForegroundColor Yellow
 Write-Host ''
-Write-Host "  Open $changelogUrl"
-Write-Host '  The newest entry should read "public-beta and newer" under its date.'
+Write-Host "  1. Open $changelogUrl"
+Write-Host '  2. On the newest entry, click the game-version link on the right.'
+Write-Host '  3. Earliest = public-beta. Latest = Any.'
+Write-Host '  4. The dropdowns ignore values set from JavaScript. Click one, then'
+Write-Host '     press Down/Enter. Enter also submits the dialog. Never press Escape.'
+Write-Host '  5. Done when the entry reads "public-beta and newer" under its date.'
 Write-Host ''
-Write-Host '  If it does not, set it by hand: click the game-version link on the'
-Write-Host '  right of that entry, Earliest = public-beta, Latest = Any. The'
-Write-Host '  dropdowns ignore values set from JavaScript, so click one and press'
-Write-Host '  Down/Enter -- Enter also submits the dialog. Never press Escape.'
+Write-Host '  Every release that changes content creates a fresh changelog entry, and'
+Write-Host '  a fresh entry always starts unpinned -- measured, not assumed. A re-upload'
+Write-Host '  of byte-identical content makes no new entry at all and leaves the'
+Write-Host '  existing pin alone, so this step only matters for real releases.'
 Write-Host ''
-Write-Host '  Background: the uploader used to clear this on every upload, because it'
-Write-Host '  called SetRequiredGameVersions("","") whenever workshop.json omitted'
-Write-Host '  minBranch/maxBranch, and empty means "all versions" rather than "leave'
-Write-Host '  alone". The local uploader is patched to skip that call instead. Do NOT'
-Write-Host '  set minBranch/maxBranch to work around it: calling that API at all makes'
-Write-Host '  SubmitItemUpdate hang until k_EResultTimeout on this app, verified twice.'
+Write-Host '  Do NOT reach for minBranch/maxBranch to automate it. Setting either one'
+Write-Host '  makes SubmitItemUpdate hang until k_EResultTimeout on this app, confirmed'
+Write-Host '  twice. The uploader is patched to stop passing empty strings for them,'
+Write-Host '  which is a different bug: empty means "all versions", not "leave alone".'
 Write-Host ''
 
 if (-not $NoBrowser) {

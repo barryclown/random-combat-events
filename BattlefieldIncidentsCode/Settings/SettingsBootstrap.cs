@@ -176,6 +176,12 @@ public static class SettingsBootstrap
                 .AddIntSlider("gentle_rain_heal", T("settings.gentle_rain.heal", "Gentle Rain Healing"),
                     BindInt(s => s.GentleRainHealPercent, (s, value) => s.GentleRainHealPercent = value), 1, 20,
                     valueFormatter: value => ModLocalization.Format("format.max_hp_percent", "{0}% max HP", value))
+                .AddIntSlider("gentle_rain_player_minimum",
+                    T("settings.gentle_rain.player_minimum", "Gentle Rain Minimum For Players"),
+                    BindInt(s => s.GentleRainPlayerMinimumHeal,
+                        (s, value) => s.GentleRainPlayerMinimumHeal = value), 1, 50,
+                    description: T("settings.gentle_rain.player_minimum.description",
+                        "The least a player heals for, whatever the percentage comes to. Enemies keep a minimum of 1, so without this the rain pays the fuller enemy side more than it pays you."))
                 .AddIntSlider("gentle_rain_weight", T("settings.gentle_rain.weight", "Gentle Rain Weight"),
                     BindInt(s => s.GentleRainWeight, (s, value) => s.GentleRainWeight = value), 0, 30)
                 .AddToggle("laser", T("settings.incident.laser", "Laser"),
@@ -414,6 +420,7 @@ public static class SettingsBootstrap
         settings.ToxicFogPoisonPerHit = Math.Clamp(settings.ToxicFogPoisonPerHit, 1, 10);
         settings.GentleRainWeight = Math.Clamp(settings.GentleRainWeight, 0, 30);
         settings.GentleRainHealPercent = Math.Clamp(settings.GentleRainHealPercent, 1, 20);
+        settings.GentleRainPlayerMinimumHeal = Math.Clamp(settings.GentleRainPlayerMinimumHeal, 1, 50);
         settings.VineSnareWeight = Math.Clamp(settings.VineSnareWeight, 0, 30);
         settings.VineSnareVulnerable = Math.Clamp(settings.VineSnareVulnerable, 1, 5);
         settings.DampSeaWindWeight = Math.Clamp(settings.DampSeaWindWeight, 0, 30);

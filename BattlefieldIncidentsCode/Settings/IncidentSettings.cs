@@ -47,6 +47,13 @@ public sealed class IncidentSettings
     public int GentleRainWeight { get; set; } = 14;
     public int GentleRainHealPercent { get; set; } = 3;
 
+    /// <summary>
+    ///     The least the rain may heal a player for, whatever the percentage works out to. Without it
+    ///     the event pays the enemy side more than it pays you, because they usually have more total
+    ///     health between them.
+    /// </summary>
+    public int GentleRainPlayerMinimumHeal { get; set; } = 10;
+
     // The laser is filed under the helpful events because it charges every unit the same share of its
     // own health, and the player is the one side that can Block it and pick who it finishes off.
     public bool EnableLaser { get; set; } = true;

@@ -155,8 +155,9 @@ internal static class IncidentText
                 ModLocalization.Turns(turnsRemaining)),
         IncidentKind.GentleRain =>
             F("incident.warning.gentle_rain",
-                "In {0}, Gentle Rain will heal every living unit for {1}% of its own max HP, with a minimum of 1 HP.",
-                ModLocalization.Turns(turnsRemaining), settings.GentleRainHealPercent),
+                "In {0}, Gentle Rain will heal every living unit for {1}% of its own max HP. Players heal at least {2}; anything else heals at least 1.",
+                ModLocalization.Turns(turnsRemaining), settings.GentleRainHealPercent,
+                settings.GentleRainPlayerMinimumHeal),
         IncidentKind.NeowsBlessing =>
             F("incident.warning.neows_blessing", "In {0}, Neow's Blessing will grant you a gift.",
                 ModLocalization.Turns(turnsRemaining)),
@@ -226,8 +227,8 @@ internal static class IncidentText
         IncidentKind.HiveOnslaught => HiveWave(checkpoint, 1, settings),
         IncidentKind.GentleRain =>
             F("incident.trigger.gentle_rain",
-                "Gentle Rain soaks the battlefield! Every living unit heals {0}% of its own max HP, with a minimum of 1 HP.",
-                settings.GentleRainHealPercent),
+                "Gentle Rain soaks the battlefield! Every living unit heals {0}% of its own max HP. Players heal at least {1}; anything else heals at least 1.",
+                settings.GentleRainHealPercent, settings.GentleRainPlayerMinimumHeal),
         _ => L("incident.trigger.default", "The battlefield shifts!"),
     };
 
