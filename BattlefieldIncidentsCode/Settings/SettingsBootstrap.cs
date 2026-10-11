@@ -320,7 +320,7 @@ public static class SettingsBootstrap
                 .AddToggle("tanx", T("settings.incident.tanx", "Tanx's Armory"),
                     BindBool(s => s.EnableTanx, (s, value) => s.EnableTanx = value),
                     T("settings.tanx.description",
-                        "A random attack from your own discipline, free this turn and gone at the end of it."))
+                        "A random attack from your own discipline, free this turn; it exhausts at turn end if still in your hand."))
                 .AddIntSlider("tanx_weight", T("settings.tanx.weight", "Tanx Weight"),
                     BindInt(s => s.TanxWeight, (s, value) => s.TanxWeight = value), 0, 30)
                 .AddToggle("tezcatara", T("settings.incident.tezcatara", "Tezcatara's Ember"),
@@ -341,7 +341,7 @@ public static class SettingsBootstrap
                 .AddToggle("orobas", T("settings.incident.orobas", "Orobas's Offer"),
                     BindBool(s => s.EnableOrobas, (s, value) => s.EnableOrobas = value),
                     T("settings.orobas.description",
-                        "Cards from every discipline but your own. Pick one; it is free this turn and gone at the end of it."))
+                        "Choose a card offered from other disciplines. It is free this turn and exhausts at turn end if still in your hand."))
                 .AddIntSlider("orobas_weight", T("settings.orobas.weight", "Orobas Weight"),
                     BindInt(s => s.OrobasWeight, (s, value) => s.OrobasWeight = value), 0, 30)
                 .AddIntSlider("orobas_choices", T("settings.orobas.choices", "Cards Offered"),

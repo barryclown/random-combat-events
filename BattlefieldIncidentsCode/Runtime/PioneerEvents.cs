@@ -324,9 +324,10 @@ internal static class PioneerEvents
     // ---- Shared ------------------------------------------------------------------------------------
 
     /// <summary>
-    ///     Puts a borrowed card in hand: free for this turn, and Ethereal so the turn is all it gets.
-    ///     Anything still holding it when the turn ends burns, which is what makes "free" a deadline
-    ///     rather than a gift you can bank.
+    ///     Puts a borrowed card in hand: free for this turn, with Ethereal.
+    ///     Only a card still in hand at turn end exhausts; playing or discarding it is not a timed removal.
+    ///     This makes the free cost a deadline
+    ///     rather than removing the card from every pile at turn end.
     /// </summary>
     private static async Task<bool> LendAsync(CardModel card, Player player)
     {

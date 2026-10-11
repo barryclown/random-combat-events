@@ -70,8 +70,12 @@ internal static class IncidentText
                 : F("boon.blessing.power", "Neow smiles on you! You gain {0} {1}.", option.Amount, subject);
         }
 
+        if (option.Payload == BoonPayload.Power && option.Power == BoonPower.StrengthDown)
+            return F("boon.curse.power_loss", "The Architect meddles! You lose {0} {1}.",
+                option.Amount, subject);
+
         return option.Payload == BoonPayload.Card
-            ? F("boon.curse.card", "The Architect meddles! {0} is shuffled into your {1}.",
+            ? F("boon.curse.card", "The Architect meddles! {0} is added to your {1}.",
                 subject, PileLabel(option.Pile))
             : F("boon.curse.power", "The Architect meddles! You suffer {0} {1}.", option.Amount, subject);
     }
@@ -176,7 +180,7 @@ internal static class IncidentText
             F("incident.warning.nonupeipe", "In {0}, Nonupeipe will leave you a gift.",
                 ModLocalization.Turns(turnsRemaining)),
         IncidentKind.TanxsArmory =>
-            F("incident.warning.tanx", "In {0}, Tanx will throw you a weapon for that turn.",
+            F("incident.warning.tanx", "In {0}, Tanx will give you an attack card. It is free that turn and exhausts at turn end if still in your hand.",
                 ModLocalization.Turns(turnsRemaining)),
         IncidentKind.TezcatarasEmber =>
             F("incident.warning.tezcatara",
@@ -255,30 +259,30 @@ internal static class IncidentText
         if (tally.Targets <= 0)
             return F("incident.result.nothing", "{0} finds nothing left to hit.", label);
 
-        var units = ModLocalization.Units(tally.Targets);
+        var instances = ModLocalization.DamageInstances(tally.Targets);
         return (scope, tally.Blocked > 0) switch
         {
             (DamageScope.Players, false) =>
-                F("incident.result.players", "{0} lands on your side: {1} lost {2} HP in total.",
-                    label, units, tally.Unblocked),
+                F("incident.result.players", "{0} lands on your side: {1}, dealing {2} unblocked damage in total.",
+                    label, instances, tally.Unblocked),
             (DamageScope.Players, true) =>
                 F("incident.result.players_blocked",
-                    "{0} lands on your side: {1} lost {2} HP in total, and {3} more was blocked.",
-                    label, units, tally.Unblocked, tally.Blocked),
+                    "{0} lands on your side: {1}, dealing {2} unblocked damage in total; another {3} damage was blocked.",
+                    label, instances, tally.Unblocked, tally.Blocked),
             (DamageScope.Enemies, false) =>
-                F("incident.result.enemies", "{0} lands on the enemy side: {1} lost {2} HP in total.",
-                    label, units, tally.Unblocked),
+                F("incident.result.enemies", "{0} lands on the enemy side: {1}, dealing {2} unblocked damage in total.",
+                    label, instances, tally.Unblocked),
             (DamageScope.Enemies, true) =>
                 F("incident.result.enemies_blocked",
-                    "{0} lands on the enemy side: {1} lost {2} HP in total, and {3} more was blocked.",
-                    label, units, tally.Unblocked, tally.Blocked),
+                    "{0} lands on the enemy side: {1}, dealing {2} unblocked damage in total; another {3} damage was blocked.",
+                    label, instances, tally.Unblocked, tally.Blocked),
             (_, false) =>
-                F("incident.result.everyone", "{0} lands on the whole room: {1} lost {2} HP in total.",
-                    label, units, tally.Unblocked),
+                F("incident.result.everyone", "{0} lands on the whole room: {1}, dealing {2} unblocked damage in total.",
+                    label, instances, tally.Unblocked),
             _ =>
                 F("incident.result.everyone_blocked",
-                    "{0} lands on the whole room: {1} lost {2} HP in total, and {3} more was blocked.",
-                    label, units, tally.Unblocked, tally.Blocked),
+                    "{0} lands on the whole room: {1}, dealing {2} unblocked damage in total; another {3} damage was blocked.",
+                    label, instances, tally.Unblocked, tally.Blocked),
         };
     }
 
@@ -351,11 +355,17 @@ internal static class IncidentText
             "Nonupeipe got here first. {0} is down to 1 HP before you have thrown anything.", monsterName);
 
     public static string TanxWeapon(string cardName) =>
-        F("ancient.tanx.weapon",
-            "Tanx throws you {0}. Free this turn, and gone at the end of it.", cardName);
+        Party.IsCoop
+        ? L("ancient.tanx.party",
+            "Tanx has supplied attack cards to the party. Cards successfully added are free this turn and exhaust at turn end if still in their owners' hands.")
+        : F("ancient.tanx.weapon",
+            "Tanx throws you {0}. Free this turn; it exhausts at turn end if still in your hand.", cardName);
 
     public static string TezcataraEmber(string relicName) =>
-        F("ancient.tezcatara.ember",
+        Party.IsCoop
+        ? L("ancient.tezcatara.party",
+            "Tezcatara has granted wax relics to the living party members. Their effects last until this fight ends.")
+        : F("ancient.tezcatara.ember",
             "Tezcatara presses {0} into your hands, still soft. It works until this fight ends, and then it does not.",
             relicName);
 
@@ -367,8 +377,11 @@ internal static class IncidentText
         F("ancient.pael.trigger", "Pael keeps its word: {0} energy and {1} card(s).", energy, cards);
 
     public static string OrobasGift(string cardName) =>
-        F("ancient.orobas.gift",
-            "Orobas hands over {0} from another discipline entirely. Free this turn, and gone at the end of it.",
+        Party.IsCoop
+        ? L("ancient.orobas.party",
+            "Orobas has offered the party cards from other disciplines. Cards successfully chosen and added are free this turn and exhaust at turn end if still in their owners' hands.")
+        : F("ancient.orobas.gift",
+            "Orobas hands over {0} from another discipline. Free this turn; it exhausts at turn end if still in your hand.",
             cardName);
 
     public static string DialogYield() => L("dialog.yield", "Let go");
@@ -409,7 +422,7 @@ internal static class IncidentText
         return wasPaidFor
             ? F("summon.left.hired",
                 "{0} decides it has done enough and walks off. What you paid stays paid.", monsterName)
-            : F("summon.left.ally", "{0} loses interest and wanders off. You are on your own again.",
+            : F("summon.left.ally", "{0} loses interest and wanders off.",
                 monsterName);
     }
 

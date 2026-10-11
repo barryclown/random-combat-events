@@ -2,6 +2,14 @@
 
 An early-alpha mod for the Slay the Spire 2 Early Access `public-beta` branch. It adds telegraphed, counterable, and configurable incidents to combat.
 
+![Random Combat Events](workshop/image.png)
+
+## Install
+
+Subscribe to [Random Combat Events on Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3782701707), [BaseLib](https://steamcommunity.com/sharedfiles/filedetails/?id=3737335127), and [RitsuLib](https://steamcommunity.com/sharedfiles/filedetails/?id=3747602295), then enable all three in the in-game mod list.
+
+Open **Combat Events** on the main menu to select a preset or adjust individual events. Multiplayer support remains experimental; see the compatibility notes below.
+
 ## Features
 
 - A deterministic route plans candidate checkpoints through turn 100. Saving and reloading does not reroll it.
