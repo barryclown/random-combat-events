@@ -85,7 +85,7 @@ public sealed class SpoilsCourier : SingletonModel, ICustomModel
             for (var extra = 0; extra < cards; extra++)
             {
                 rewards.Add(new CardReward(
-                    CardCreationOptions.ForRoom(player, roomType).WithFlags(CardCreationFlags.IsFromCombat),
+                    GameApiCompat.CombatCardOptions(player, roomType),
                     3, player));
             }
 

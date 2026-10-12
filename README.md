@@ -1,6 +1,6 @@
 # Random Combat Events / 戰鬥隨機事件
 
-An early-alpha mod for the Slay the Spire 2 Early Access `public-beta` branch. It adds telegraphed, counterable, and configurable incidents to combat.
+An early-alpha mod for the Slay the Spire 2 Early Access `public` (default) and `public-beta` branches. It adds telegraphed, counterable, and configurable incidents to combat.
 
 ![Random Combat Events](workshop/image.png)
 
@@ -34,8 +34,10 @@ Co-op support arrived in `0.4.0-alpha.1`: the whole table shares one route, shar
 ## Requirements
 
 - [BaseLib](https://steamcommunity.com/sharedfiles/filedetails/?id=3737335127) 3.4.4 or newer
-- [RitsuLib](https://steamcommunity.com/sharedfiles/filedetails/?id=3747602295) 0.5.12 or newer (older builds cannot start a run on 0.111.0)
-- Slay the Spire 2 Early Access `public-beta` 0.111.0 (the branch this build targets)
+- [RitsuLib](https://steamcommunity.com/sharedfiles/filedetails/?id=3747602295) 0.6.7 or newer; install the complete multi-version runtime, including `shared/`, `compat/`, and `assets.zip`
+- Slay the Spire 2 Early Access `public` 0.107.1 or `public-beta` 0.111.0
+
+`0.4.0-alpha.5` adds support for the default public branch while retaining beta support. Event rules and values are unchanged. Update BaseLib and RitsuLib before enabling the mod. Co-op remains experimental.
 
 ## Build
 
@@ -47,14 +49,24 @@ dotnet build -c Release
 
 The Release build copies the DLL and manifest into the game's local `mods/BattlefieldIncidents` folder for testing.
 
+For the single-DLL release, compile against the earliest supported public API (0.107.1), using `STS2.RitsuLib.Compat.0.107.1` 0.6.7. Set `Sts2Path` to that legal game installation and use `SkipModDeploy` for an isolated build:
+
+```powershell
+dotnet build -c Release -p:Sts2Path="path/to/public-0.107.1" -p:SkipModDeploy=true
+```
+
+Verify the resulting DLL on both public 0.107.1 and public-beta 0.111.0 before publishing. Players use the complete RitsuLib variant pack, which selects the matching runtime automatically.
+
 To publish, use `workshop/Publish.ps1` rather than calling the uploader directly. It builds, runs the
 tests, stages `workshop/content`, syncs the manifest, uploads, reads the item back from Steam, and
 then walks you through re-setting the item's known-game-version association — which every upload
 silently clears.
 
 ```powershell
-.\workshop\Publish.ps1 -ChangeNote "0.4.1: what changed"
+.\workshop\Publish.ps1 -ChangeNote "0.4.0-alpha.5: Added public-branch support; beta support retained."
 ```
+
+If the test project or uploader is not in the default sibling locations, pass `-TestsDir "path/to/BattlefieldIncidents.Tests"` and `-UploaderPath "path/to/ModUploader.exe"`. Use `-SkipBuild -SkipTests` only for an already verified build, and `-NoBrowser` to print the game-version reminder without opening a browser.
 
 ## Ideas and contributions
 

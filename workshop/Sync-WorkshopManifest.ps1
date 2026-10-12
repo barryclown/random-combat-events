@@ -50,7 +50,7 @@ foreach ($image in $uploadImages) {
     }
 }
 
-$json = $manifest | ConvertTo-Json -Depth 10
-[System.IO.File]::WriteAllText($manifestPath, $json + [Environment]::NewLine, $utf8NoBom)
+$json = ($manifest | ConvertTo-Json -Depth 10).Replace("`r`n", "`n")
+[System.IO.File]::WriteAllText($manifestPath, $json + "`n", $utf8NoBom)
 
 Write-Host "Synchronized workshop.json ($descriptionBytes/8000 description bytes, $($uploadImages.Count) images checked)."

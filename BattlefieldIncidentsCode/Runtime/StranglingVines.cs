@@ -127,7 +127,7 @@ internal static class StranglingVines
             {
                 var match = ModelDb.Monsters.FirstOrDefault(monster =>
                     string.Equals(monster.GetType().Name, name, StringComparison.Ordinal));
-                if (match is { IsMock: false })
+                if (match != null && !GameApiCompat.IsMock(match))
                     return match;
             }
         }

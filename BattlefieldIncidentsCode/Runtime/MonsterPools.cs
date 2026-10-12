@@ -83,7 +83,7 @@ internal static class MonsterPools
 
     private static HashSet<string> Names(IEnumerable<EncounterModel> encounters) =>
         encounters
-            .Where(encounter => !encounter.IsMock)
+            .Where(encounter => !GameApiCompat.IsMock(encounter))
             .SelectMany(encounter => encounter.AllPossibleMonsters)
             .Select(monster => monster.GetType().Name)
             .ToHashSet(StringComparer.Ordinal);
@@ -95,12 +95,12 @@ internal static class MonsterPools
         var found = new Dictionary<string, MonsterModel>(StringComparer.Ordinal);
         foreach (var encounter in encounters)
         {
-            if (encounter.IsMock)
+            if (GameApiCompat.IsMock(encounter))
                 continue;
 
             foreach (var monster in encounter.AllPossibleMonsters)
             {
-                if (monster.IsMock)
+                if (GameApiCompat.IsMock(monster))
                     continue;
 
                 var name = monster.GetType().Name;

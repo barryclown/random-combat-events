@@ -42,7 +42,7 @@
              BaseLib's separately released StS2 0.110 compatibility fixes. -->
         <PackageReference Include="Alchyr.Sts2.BaseLib" Version="3.3.8" PrivateAssets="All"/>
         <PackageReference Include="Alchyr.Sts2.ModAnalyzers" Version="0.1.9" PrivateAssets="All" />
-        <PackageReference Include="STS2.RitsuLib" Version="0.5.12" PrivateAssets="All" />
+        <PackageReference Include="STS2.RitsuLib.Compat.0.107.1" Version="0.6.7" PrivateAssets="All" />
     </ItemGroup>
 
     <ItemGroup>
@@ -101,7 +101,7 @@
                  Importance="high" />
     </Target>
 
-    <Target Name="CopyToModsFolderOnBuild" AfterTargets="PostBuildEvent">
+    <Target Name="CopyToModsFolderOnBuild" AfterTargets="PostBuildEvent" Condition="'$(SkipModDeploy)' != 'true'">
         <Message Text="Copying .dll .pdb and .json to mods folder." Importance="high" />
         <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" />
         <Copy SourceFiles="$(AssemblyName).json" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" />

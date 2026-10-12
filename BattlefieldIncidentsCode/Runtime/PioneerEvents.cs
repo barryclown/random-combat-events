@@ -102,7 +102,7 @@ internal static class PioneerEvents
 
             if (!card.CanPlay())
             {
-                await CardCmd.Exhaust(choiceContext, card);
+                await GameApiCompat.Exhaust(choiceContext, card);
                 played++;
                 continue;
             }
@@ -217,7 +217,7 @@ internal static class PioneerEvents
             if (pool.Count == 0)
                 continue;
 
-            var rng = new Rng(seed ^ player.NetId, RngName);
+            var rng = GameApiCompat.CreateRng(seed ^ player.NetId, RngName);
             var card = CardFactory.GetDistinctForCombat(player, pool, 1, rng).FirstOrDefault();
             if (card == null)
                 continue;
@@ -298,7 +298,7 @@ internal static class PioneerEvents
             if (pool.Count == 0)
                 continue;
 
-            var rng = new Rng(seed ^ player.NetId, RngName);
+            var rng = GameApiCompat.CreateRng(seed ^ player.NetId, RngName);
             var offered = CardFactory
                 .GetDistinctForCombat(player, pool, Math.Clamp(settings.OrobasChoices, 1, 5), rng)
                 .ToList();

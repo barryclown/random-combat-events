@@ -3,13 +3,13 @@
   "name": "戰鬥隨機事件 / Random Combat Events",
   "author": "Barry",
   "description": "Adds telegraphed, counterable, and configurable random events to combat.",
-  "version": "0.4.0-alpha.4",
-  "min_game_version": "0.111.0",
+  "version": "0.4.0-alpha.5",
+  "min_game_version": "0.107.1",
   "has_pck": false,
   "has_dll": true,
   "dependencies": [
     {"id": "BaseLib", "min_version": "3.4.4"},
-    {"id": "STS2-RitsuLib", "min_version": "0.5.12"}
+    {"id": "STS2-RitsuLib", "min_version": "0.6.7"}
   ],
   "affects_gameplay": true
 }

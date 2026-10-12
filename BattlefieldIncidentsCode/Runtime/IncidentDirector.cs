@@ -975,9 +975,7 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
             HittableCreatures(combatState),
             damage,
             ValueProp.Unpowered,
-            null,
-            null,
-            null);
+            null!);
         return Tally(results);
     }
 
@@ -1002,7 +1000,7 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
             if (damagePercent <= 0)
             {
                 tally = Tally(await CreatureCmd.Damage(choiceContext, targets, damage,
-                    ValueProp.Unpowered, null, null, null), tally);
+                    ValueProp.Unpowered, null!), tally);
                 continue;
             }
 
@@ -1017,7 +1015,7 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
                     $"{kind} charges {target.Name} ({side}) {damagePercent}% of {target.MaxHp} max HP = {share}.");
                 tally = Tally(
                     await CreatureCmd.Damage(choiceContext, [target], share, ValueProp.Unpowered,
-                        null, null, null),
+                        null!),
                     tally);
             }
         }
@@ -1132,7 +1130,7 @@ public sealed class IncidentDirector : SingletonModel, ICustomModel
         var runState = combatState.RunState;
         var coordinate = runState.CurrentMapCoord;
         return CombatSeedBuilder.Build(
-            runState.Rng.Seed,
+            GameApiCompat.RunSeed(runState.Rng),
             runState.CurrentActIndex,
             runState.ActFloor,
             runState.TotalFloor,

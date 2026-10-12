@@ -92,7 +92,7 @@ internal static class MarkedRooms
     private static void SyncOwner(Player player)
     {
         var runState = player.RunState;
-        var key = $"{runState?.Rng.Seed}:{runState?.CurrentActIndex}";
+        var key = $"{(runState == null ? (ulong?)null : GameApiCompat.RunSeed(runState.Rng))}:{runState?.CurrentActIndex}";
         if (key == _ownerKey)
             return;
 

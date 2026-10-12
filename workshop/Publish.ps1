@@ -28,15 +28,25 @@ param(
     [switch]$SkipTests,
 
     # Skip opening the changelog page. The reminder is still printed; it cannot be switched off.
-    [switch]$NoBrowser
+    [switch]$NoBrowser,
+
+    # Optional locations for an isolated checkout or release workspace.
+    [string]$TestsDir,
+
+    [string]$UploaderPath
 )
 
 $ErrorActionPreference = 'Stop'
 
 $workshopDir = $PSScriptRoot
 $projectDir = Split-Path -Parent $workshopDir
-$testsDir = Join-Path (Split-Path -Parent $projectDir) 'BattlefieldIncidents.Tests'
-$uploader = Join-Path (Split-Path -Parent $projectDir) 'tools\sts2-mod-uploader\publish\win-x64\ModUploader.exe'
+if ([string]::IsNullOrWhiteSpace($TestsDir)) {
+    $TestsDir = Join-Path (Split-Path -Parent $projectDir) 'BattlefieldIncidents.Tests'
+}
+if ([string]::IsNullOrWhiteSpace($UploaderPath)) {
+    $UploaderPath = Join-Path (Split-Path -Parent $projectDir) 'tools\sts2-mod-uploader\publish\win-x64\ModUploader.exe'
+}
+$uploader = $UploaderPath
 $modId = (Get-Content -Raw -LiteralPath (Join-Path $workshopDir 'mod_id.txt')).Trim()
 $manifestPath = Join-Path $projectDir 'BattlefieldIncidents.json'
 $version = (Get-Content -Raw -Encoding UTF8 -LiteralPath $manifestPath | ConvertFrom-Json).version
@@ -138,10 +148,10 @@ Write-Host '================================================================' -F
 Write-Host ''
 Write-Host "  1. Open $changelogUrl"
 Write-Host '  2. On the newest entry, click the game-version link on the right.'
-Write-Host '  3. Earliest = public-beta. Latest = Any.'
+Write-Host '  3. Earliest = public. Latest = Any.'
 Write-Host '  4. The dropdowns ignore values set from JavaScript. Click one, then'
 Write-Host '     press Down/Enter. Enter also submits the dialog. Never press Escape.'
-Write-Host '  5. Done when the entry reads "public-beta and newer" under its date.'
+Write-Host '  5. Done when the entry reads "public and newer" under its date.'
 Write-Host ''
 Write-Host '  Every release that changes content creates a fresh changelog entry, and'
 Write-Host '  a fresh entry always starts unpinned -- measured, not assumed. A re-upload'
